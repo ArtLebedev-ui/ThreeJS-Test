@@ -38,31 +38,50 @@ const fragmentSource = `
            (d - b) * u.x * u.y;
   }
 
-  vec3 filmGrain(vec2 uv, float time) {
-    float vignette = smoothstep(1.2, 0.2, distance(uv, vec2(0.5)));
+  float fbm(vec2 st) {
+    float value = 0.0;
+    float amplitude = 0.5;
+    mat2 rot = mat2(0.84147, -0.54030, 0.54030, 0.84147);
 
-    float n1 = noise(uv * 120.0 + time * 0.5);
-    float n2 = noise(uv * 40.0 - time * 0.25);
-    float n3 = noise(uv * 8.0 + sin(time * 0.2));
+    for (int i = 0; i < 4; i++) {
+      value += amplitude * noise(st);
+      st = rot * st * 1.6 + 0.15;
+      amplitude *= 0.5;
+    }
+    return value;
+  }
 
-    float grain = n1 * 0.65 + n2 * 0.25 + n3 * 0.1;
+  vec3 softBackdrop(vec2 uv, float time) {
+    vec2 aspectUv = vec2(uv.x * (u_resolution.x / u_resolution.y), uv.y);
+    vec2 centered = aspectUv - 0.5;
 
-    float scan = sin((uv.y + time * 0.1) * 300.0) * 0.025;
+    float vignette = smoothstep(0.92, 0.25, length(centered));
 
-    vec3 base = mix(vec3(0.04, 0.05, 0.09), vec3(0.12, 0.13, 0.2), uv.y);
-    vec3 tinted = base + vec3(0.02, 0.01, -0.01) * smoothstep(0.0, 1.0, uv.y);
+    float drift = fbm(uv * 1.5 + vec2(time * 0.01));
+    float ribbon = fbm(vec2(uv.x + time * 0.02, uv.y - time * 0.015));
 
-    vec3 color = tinted + vec3(grain * 0.12 + scan);
-    color *= mix(0.6, 1.1, vignette);
+    vec3 top = vec3(0.09, 0.11, 0.17);
+    vec3 bottom = vec3(0.16, 0.18, 0.24);
+    vec3 base = mix(top, bottom, uv.y + 0.02 * sin(time * 0.08));
+
+    vec3 accent = vec3(0.2, 0.24, 0.32);
+    float ribbonMask = smoothstep(0.3, 0.85, uv.x + ribbon * 0.15);
+    vec3 blended = mix(base, accent, ribbonMask * 0.4);
+
+    float grain = noise(uv * 60.0 + time * 0.35);
+    float micro = noise((uv + 10.0) * 8.0 - time * 0.05);
+    float softNoise = grain * 0.5 + micro * 0.5;
+
+    vec3 color = blended + vec3(drift * 0.08) + vec3(softNoise * 0.03);
+    color = mix(color, base, 0.5);
+    color *= mix(0.85, 1.03, vignette);
 
     return clamp(color, 0.0, 1.0);
   }
 
   void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-    uv.x *= u_resolution.x / u_resolution.y;
-
-    vec3 color = filmGrain(uv, u_time);
+    vec3 color = softBackdrop(uv, u_time);
     gl_FragColor = vec4(color, 1.0);
   }
 `;
