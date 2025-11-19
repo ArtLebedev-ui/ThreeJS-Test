@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebGL Grainy Noise Background</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        color: #f4f4f4;
+        font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        background: #050505;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at top, #161926, #050505 55%);
+        overflow: hidden;
+      }
+
+      canvas {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .content {
+        position: relative;
+        text-align: center;
+        padding: 3rem;
+        backdrop-filter: blur(12px);
+        background: rgba(5, 5, 5, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        box-shadow: 0 35px 80px rgba(0, 0, 0, 0.55);
+      }
+
+      h1 {
+        font-weight: 600;
+        letter-spacing: 0.2rem;
+        margin-bottom: 0.75rem;
+        text-transform: uppercase;
+      }
+
+      p {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1rem;
+        letter-spacing: 0.05rem;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="grain"></canvas>
+    <div class="content">
+      <h1>Organic Noise</h1>
+      <p>WebGL noise shader rendering a grainy, film-like background.</p>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
