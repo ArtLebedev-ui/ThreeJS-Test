@@ -55,26 +55,27 @@ const fragmentSource = `
     vec2 aspectUv = vec2(uv.x * (u_resolution.x / u_resolution.y), uv.y);
     vec2 centered = aspectUv - 0.5;
 
-    float vignette = smoothstep(0.92, 0.25, length(centered));
+    float vignette = smoothstep(1.05, 0.35, length(centered));
 
-    float drift = fbm(uv * 1.5 + vec2(time * 0.01));
-    float ribbon = fbm(vec2(uv.x + time * 0.02, uv.y - time * 0.015));
+    float drift = fbm(uv * 1.35 + vec2(time * 0.006, -time * 0.004));
+    float fold = fbm(vec2(uv.y + time * 0.01, uv.x * 0.8 - time * 0.012));
 
-    vec3 top = vec3(0.09, 0.11, 0.17);
-    vec3 bottom = vec3(0.16, 0.18, 0.24);
-    vec3 base = mix(top, bottom, uv.y + 0.02 * sin(time * 0.08));
+    vec3 upper = vec3(0.08, 0.08, 0.085);
+    vec3 lower = vec3(0.03, 0.031, 0.035);
+    vec3 base = mix(upper, lower, uv.y + 0.015 * sin(time * 0.05));
 
-    vec3 accent = vec3(0.2, 0.24, 0.32);
-    float ribbonMask = smoothstep(0.3, 0.85, uv.x + ribbon * 0.15);
-    vec3 blended = mix(base, accent, ribbonMask * 0.4);
+    vec3 accent = vec3(0.14, 0.14, 0.15);
+    float foldMask = smoothstep(0.2, 0.85, uv.x + fold * 0.2);
+    vec3 layered = mix(base, accent, foldMask * 0.35);
 
-    float grain = noise(uv * 60.0 + time * 0.35);
-    float micro = noise((uv + 10.0) * 8.0 - time * 0.05);
-    float softNoise = grain * 0.5 + micro * 0.5;
+    float grain = noise(uv * 70.0 + time * 0.25);
+    float micro = noise((uv + 4.0) * 9.0 - time * 0.04);
+    float softNoise = mix(grain, micro, 0.4);
 
-    vec3 color = blended + vec3(drift * 0.08) + vec3(softNoise * 0.03);
-    color = mix(color, base, 0.5);
-    color *= mix(0.85, 1.03, vignette);
+    vec3 color = layered + vec3(drift * 0.05);
+    color += vec3(softNoise * 0.02);
+    color = mix(color, base, 0.65);
+    color *= mix(0.88, 1.02, vignette);
 
     return clamp(color, 0.0, 1.0);
   }
