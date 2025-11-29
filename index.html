@@ -14,81 +14,118 @@
   </head>
   <body>
     <main class="timeline" aria-label="Breath practice effects">
-      <svg
-        class="timeline__path"
-        width="375"
-        height="1376"
-        viewBox="0 0 375 1376"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-      >
-        <path
-          d="M258.803 1375.68C258.803 1375.68 184.931 1017.16 243.803 800.182C275.981 681.588 384.817 635.475 372.803 513.182C355.046 332.418 -21.6799 412.791 1.80342 232.682C18.73 102.86 243.803 0.681641 243.803 0.681641"
-          stroke="url(#paint0_linear_87_153)"
-          stroke-width="1.5"
-        />
-        <defs>
-          <linearGradient
-            id="paint0_linear_87_153"
-            x1="187.237"
-            y1="1.18164"
-            x2="187.237"
-            y2="1375.68"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop stop-color="white" stop-opacity="0" />
-            <stop offset="0.5" stop-color="white" />
-            <stop offset="1" stop-color="white" stop-opacity="0" />
-          </linearGradient>
-        </defs>
-      </svg>
-
       <section class="timeline__content">
         <header class="timeline__intro">
           <p>Breath Practice → Nervous System Effects</p>
           <h1>Дыхание возвращает телу ясность и устойчивость</h1>
+          <p class="timeline__lede">
+            Breathing patterns directly influence the stress response, energy
+            levels, and emotional balance. Здесь показано, что именно меняется
+            внутри тела.
+          </p>
         </header>
 
-        <article class="timeline__item" data-delay="0">
-          <span class="timeline__dot" aria-hidden="true"></span>
-          <p class="timeline__eyebrow">Регуляция</p>
-          <h2>Sympathetic → Parasympathetic Shift</h2>
-          <p>
-            Slow, rhythmic breathing moves the body out of stress mode and into a
-            regulated, balanced state.
-          </p>
-        </article>
+        <div class="timeline__track">
+          <svg
+            class="timeline__path"
+            width="375"
+            height="1376"
+            viewBox="0 0 375 1376"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path
+              d="M258.803 1375.68C258.803 1375.68 184.931 1017.16 243.803 800.182C275.981 681.588 384.817 635.475 372.803 513.182C355.046 332.418 -21.6799 412.791 1.80342 232.682C18.73 102.86 243.803 0.681641 243.803 0.681641"
+              stroke="url(#paint0_linear_87_153)"
+              stroke-width="1.5"
+            />
+            <defs>
+              <linearGradient
+                id="paint0_linear_87_153"
+                x1="187.237"
+                y1="1.18164"
+                x2="187.237"
+                y2="1375.68"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop stop-color="white" stop-opacity="0" />
+                <stop offset="0.5" stop-color="white" />
+                <stop offset="1" stop-color="white" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+          </svg>
 
-        <article class="timeline__item" data-delay="0.1">
-          <span class="timeline__dot" aria-hidden="true"></span>
-          <p class="timeline__eyebrow">CO₂ Control</p>
-          <h2>CO₂ Tolerance</h2>
-          <p>
-            Better carbon dioxide control reduces panic signals and stabilizes
-            emotional reactivity.
-          </p>
-        </article>
+          <div class="timeline__items">
+            <article
+              class="timeline__item"
+              data-progress="0.05"
+              data-side="left"
+              data-delay="0"
+            >
+              <span class="timeline__dot" aria-hidden="true"></span>
+              <div class="timeline__panel">
+                <p class="timeline__eyebrow">Регуляция</p>
+                <h2>Sympathetic → Parasympathetic Shift</h2>
+                <p>
+                  Slow, rhythmic breathing moves the body out of stress mode and
+                  into a regulated, balanced state.
+                </p>
+              </div>
+            </article>
 
-        <article class="timeline__item" data-delay="0.2">
-          <span class="timeline__dot" aria-hidden="true"></span>
-          <p class="timeline__eyebrow">Heart-Brain Loop</p>
-          <h2>HRV Improvement</h2>
-          <p>
-            Higher heart-rate variability is linked to calmer mood, sharper focus,
-            and better resilience.
-          </p>
-        </article>
+            <article
+              class="timeline__item"
+              data-progress="0.32"
+              data-side="right"
+              data-delay="0.1"
+            >
+              <span class="timeline__dot" aria-hidden="true"></span>
+              <div class="timeline__panel">
+                <p class="timeline__eyebrow">CO₂ Control</p>
+                <h2>CO₂ Tolerance</h2>
+                <p>
+                  Better carbon dioxide control reduces panic signals and
+                  stabilizes emotional reactivity.
+                </p>
+              </div>
+            </article>
 
-        <article class="timeline__item" data-delay="0.3">
-          <span class="timeline__dot" aria-hidden="true"></span>
-          <p class="timeline__eyebrow">Vagus Nerve</p>
-          <h2>Vagal Tone Activation</h2>
-          <p>
-            Breathing stimulates the vagus nerve, supporting deep relaxation,
-            improved digestion, and clarity.
-          </p>
-        </article>
+            <article
+              class="timeline__item"
+              data-progress="0.58"
+              data-side="left"
+              data-delay="0.2"
+            >
+              <span class="timeline__dot" aria-hidden="true"></span>
+              <div class="timeline__panel">
+                <p class="timeline__eyebrow">Heart-Brain Loop</p>
+                <h2>HRV Improvement</h2>
+                <p>
+                  Higher heart-rate variability is linked to calmer mood, sharper
+                  focus, and better resilience.
+                </p>
+              </div>
+            </article>
+
+            <article
+              class="timeline__item"
+              data-progress="0.84"
+              data-side="right"
+              data-delay="0.3"
+            >
+              <span class="timeline__dot" aria-hidden="true"></span>
+              <div class="timeline__panel">
+                <p class="timeline__eyebrow">Vagus Nerve</p>
+                <h2>Vagal Tone Activation</h2>
+                <p>
+                  Breathing stimulates the vagus nerve, supporting deep
+                  relaxation, improved digestion, and clarity.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
       </section>
     </main>
 
