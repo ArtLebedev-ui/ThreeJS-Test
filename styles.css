@@ -1,0 +1,205 @@
+:root {
+  color-scheme: dark;
+  --bg-deep: #020308;
+  --bg-glow: radial-gradient(circle at 15% 15%, rgba(254, 255, 243, 0.08), transparent 45%),
+    radial-gradient(circle at 80% 30%, rgba(82, 203, 170, 0.12), transparent 50%),
+    radial-gradient(circle at 20% 70%, rgba(200, 255, 138, 0.12), transparent 55%),
+    linear-gradient(180deg, #050608 0%, #030305 100%);
+  --text-main: #f6f5f1;
+  --text-soft: rgba(246, 245, 241, 0.68);
+  --accent: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: var(--text-main);
+  background: var(--bg-glow);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-family: "Playfair Display", "Times New Roman", serif;
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin: 0;
+}
+
+main.timeline {
+  position: relative;
+  min-height: 180vh;
+  padding: clamp(40px, 7vw, 80px) clamp(18px, 5vw, 160px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.08), transparent 60%);
+  filter: blur(40px);
+  opacity: 0.6;
+  z-index: -2;
+}
+
+.timeline__content {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.timeline__intro {
+  max-width: 520px;
+  margin-bottom: 8vh;
+}
+
+.timeline__intro p:first-child {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--text-soft);
+  margin-bottom: 0.5rem;
+}
+
+.timeline__intro h1 {
+  font-size: clamp(2.4rem, 5vw, 3.5rem);
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+}
+
+.timeline__lede {
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.timeline__track {
+  position: relative;
+  width: min(460px, 70vw);
+  aspect-ratio: 375 / 1376;
+  margin: 0 auto;
+}
+
+.timeline__path {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.timeline__path path {
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
+}
+
+.timeline__items {
+  position: absolute;
+  inset: 0;
+}
+
+.timeline__item {
+  position: absolute;
+  left: var(--item-x);
+  top: var(--item-y);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  --panel-shift-x: 48px;
+  --panel-text-align: left;
+}
+
+.timeline__item[data-side="left"] {
+  --panel-shift-x: calc(-100% - 48px);
+  --panel-text-align: right;
+}
+
+.timeline__item.is-visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.timeline__dot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+  transform: translate(-50%, -50%);
+}
+
+.timeline__panel {
+  position: relative;
+  width: clamp(220px, 32vw, 360px);
+  padding: 1.2rem 1.5rem;
+  background: rgba(2, 3, 8, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  backdrop-filter: blur(20px);
+  transform: translate(var(--panel-shift-x), -50%);
+  text-align: var(--panel-text-align);
+  pointer-events: auto;
+}
+
+.timeline__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  margin-bottom: 0.5rem;
+}
+
+.timeline__panel h2 {
+  font-size: 1.4rem;
+  margin-bottom: 0.65rem;
+}
+
+.timeline__panel p:last-child {
+  line-height: 1.6;
+  color: rgba(246, 245, 241, 0.78);
+}
+
+@media (max-width: 900px) {
+  .timeline__track {
+    width: min(420px, 90vw);
+  }
+
+  .timeline__panel {
+    width: min(300px, 70vw);
+  }
+}
+
+@media (max-width: 640px) {
+  main.timeline {
+    padding-inline: clamp(16px, 4vw, 32px);
+  }
+
+  .timeline__track {
+    width: 100%;
+  }
+
+  .timeline__item,
+  .timeline__item[data-side="left"] {
+    --panel-shift-x: 0;
+    --panel-text-align: left;
+  }
+
+  .timeline__panel {
+    transform: translate(-50%, 0) translateY(-24px);
+    width: min(90vw, 340px);
+  }
+}
