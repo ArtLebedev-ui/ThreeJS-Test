@@ -27,17 +27,33 @@
     const progressBar = listenWrapper?.querySelector('.active_bar');
     const synth = window.speechSynthesis;
 
-    if (!article || !playButton || !progressBar) {
+    if (!article || !listenWrapper || !playButton || !progressBar) {
       console.warn('[Listen Article] Missing required DOM nodes.');
       return;
     }
 
+    const setStatusText = (label) => {
+      if (statusText && typeof label === 'string') {
+        statusText.textContent = label;
+      }
+    };
+
+    const disableControl = (label) => {
+      playButton.setAttribute('aria-disabled', 'true');
+      listenWrapper.classList.add('is-disabled');
+      if (label) setStatusText(label);
+    };
+
+    const enableControl = () => {
+      playButton.removeAttribute('aria-disabled');
+      listenWrapper.classList.remove('is-disabled');
+    };
+
+    disableControl();
+
     if (!synth) {
       console.warn('[Listen Article] Speech Synthesis API is not supported in this browser.');
-      if (statusText) {
-        statusText.textContent = 'Прослушивание недоступно';
-      }
-      playButton.setAttribute('aria-disabled', 'true');
+      disableControl('Unavailable');
       return;
     }
 
@@ -103,10 +119,50 @@
       return femaleByName || voices[0];
     };
 
-    selectedVoice = pickVoice();
-    synth.onvoiceschanged = () => {
+    const waitForVoices = () =>
+      new Promise((resolve) => {
+        const resolveIfReady = () => {
+          const available = getVoices();
+          if (available.length) {
+            resolve(available);
+            return true;
+          }
+          return false;
+        };
+
+        if (resolveIfReady()) return;
+
+        const pollId = window.setInterval(() => {
+          if (resolveIfReady()) {
+            window.clearInterval(pollId);
+          }
+        }, 180);
+
+        window.setTimeout(() => {
+          window.clearInterval(pollId);
+          resolve(getVoices());
+        }, 3200);
+      });
+
+    const handleVoicesChanged = () => {
       selectedVoice = pickVoice();
     };
+
+    if (typeof synth.addEventListener === 'function') {
+      synth.addEventListener('voiceschanged', handleVoicesChanged);
+    } else {
+      synth.onvoiceschanged = handleVoicesChanged;
+    }
+
+    waitForVoices().then((voices) => {
+      if (!voices.length) {
+        disableControl('Unavailable');
+        return;
+      }
+      handleVoicesChanged();
+      enableControl();
+      setStatusText(DEFAULT_LABEL);
+    });
 
     const startFallback = () => {
       if (!fallbackDuration) return;
@@ -134,11 +190,13 @@
       listenWrapper?.classList.remove('is-playing');
       playButton.setAttribute('aria-pressed', 'false');
 
-      if (statusText) {
-        statusText.textContent = completed ? 'Готово' : DEFAULT_LABEL;
+      if (completed) {
+        setStatusText('Finished');
         window.setTimeout(() => {
-          statusText.textContent = DEFAULT_LABEL;
-        }, completed ? 1800 : 0);
+          setStatusText(DEFAULT_LABEL);
+        }, 1800);
+      } else {
+        setStatusText(DEFAULT_LABEL);
       }
 
       if (completed) {
@@ -167,9 +225,7 @@
       articleText = article.innerText.replace(/\s+/g, ' ').trim();
 
       if (!articleText) {
-        if (statusText) {
-          statusText.textContent = 'Нет текста для чтения';
-        }
+        setStatusText('No content to read');
         return null;
       }
 
@@ -200,7 +256,7 @@
       playButton.classList.add('is-playing');
       listenWrapper?.classList.add('is-playing');
       playButton.setAttribute('aria-pressed', 'true');
-      if (statusText) statusText.textContent = 'Слушаем...';
+      setStatusText('Listening...');
       resetBar();
 
       synth.speak(utterance);
@@ -230,6 +286,9 @@
     playButton.setAttribute('tabindex', '0');
 
     const togglePlayback = () => {
+      if (playButton.hasAttribute('aria-disabled')) {
+        return;
+      }
       if (isPlaying) {
         stopPlayback();
       } else {
