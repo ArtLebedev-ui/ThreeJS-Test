@@ -52,14 +52,16 @@
     let selectedVoice = null;
 
     const DEFAULT_LABEL = statusText?.dataset.defaultLabel || 'Listen Article';
+    const DEFAULT_LANG =
+      article?.getAttribute('lang') || document.documentElement.lang || 'en-US';
     const VOICE_HINTS = listenWrapper?.dataset.voice
       ? [listenWrapper.dataset.voice]
       : [
+          'Google US English Female',
           'Google UK English Female',
-          'Google русский',
-          'Microsoft Irina Desktop',
-          'Microsoft Olga',
-          'Yandex Tatyana',
+          'Microsoft Zira Desktop',
+          'Samantha',
+          'Jenny Neural',
         ];
 
     const updateBar = (ratio) => {
@@ -95,8 +97,8 @@
       if (voiceFromHints) return voiceFromHints;
 
       const femaleByName =
-        voices.find((voice) => /female|жен/i.test(voice.name)) ||
-        voices.find((voice) => voice.lang?.toLowerCase().startsWith('ru'));
+        voices.find((voice) => /female/i.test(voice.name)) ||
+        voices.find((voice) => voice.lang?.toLowerCase().startsWith('en'));
 
       return femaleByName || voices[0];
     };
@@ -173,7 +175,7 @@
 
       textLength = articleText.length;
       const u = new SpeechSynthesisUtterance(articleText);
-      u.lang = article.getAttribute('lang') || document.documentElement.lang || 'ru-RU';
+      u.lang = DEFAULT_LANG;
       u.rate = 1;
       u.pitch = 1;
       if (selectedVoice) {
