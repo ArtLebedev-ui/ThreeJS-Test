@@ -49,8 +49,18 @@
     let fallbackTimer = null;
     let fallbackDuration = 0;
     let fallbackStart = 0;
+    let selectedVoice = null;
 
     const DEFAULT_LABEL = statusText?.dataset.defaultLabel || 'Listen Article';
+    const VOICE_HINTS = listenWrapper?.dataset.voice
+      ? [listenWrapper.dataset.voice]
+      : [
+          'Google UK English Female',
+          'Google русский',
+          'Microsoft Irina Desktop',
+          'Microsoft Olga',
+          'Yandex Tatyana',
+        ];
 
     const updateBar = (ratio) => {
       const clamped = Math.min(Math.max(ratio, 0), 1);
@@ -66,6 +76,34 @@
         window.clearInterval(fallbackTimer);
         fallbackTimer = null;
       }
+    };
+
+    const getVoices = () => {
+      const voices = synth.getVoices();
+      return Array.isArray(voices) ? voices : [];
+    };
+
+    const pickVoice = () => {
+      const voices = getVoices();
+      if (!voices.length) return null;
+
+      const voiceFromHints =
+        VOICE_HINTS.map((hint) =>
+          voices.find((voice) => voice.name.toLowerCase().includes(hint.toLowerCase()))
+        ).find(Boolean) || null;
+
+      if (voiceFromHints) return voiceFromHints;
+
+      const femaleByName =
+        voices.find((voice) => /female|жен/i.test(voice.name)) ||
+        voices.find((voice) => voice.lang?.toLowerCase().startsWith('ru'));
+
+      return femaleByName || voices[0];
+    };
+
+    selectedVoice = pickVoice();
+    synth.onvoiceschanged = () => {
+      selectedVoice = pickVoice();
     };
 
     const startFallback = () => {
@@ -138,6 +176,9 @@
       u.lang = article.getAttribute('lang') || document.documentElement.lang || 'ru-RU';
       u.rate = 1;
       u.pitch = 1;
+      if (selectedVoice) {
+        u.voice = selectedVoice;
+      }
       u.onend = () => finalizePlayback(true);
       u.onerror = () => finalizePlayback(false);
       u.onboundary = handleBoundary;
