@@ -17,7 +17,7 @@ const phaseCoaching = {
   exhale: "Мягко отпустите — воздух выходит и тело расслабляется.",
 };
 
-const root = document.documentElement;
+const root = document.querySelector(".breath-404") ?? document.documentElement;
 const orb = document.querySelector("[data-orb]");
 const scoreEl = document.querySelector("[data-score]");
 const bestEl = document.querySelector("[data-best]");
