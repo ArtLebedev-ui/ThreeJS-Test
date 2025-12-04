@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Экспериментальная 404-страница с дыхательной игрой" />
+    <title>404 · Найдите дыхание</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="breath-404">
+      <header class="hero">
+        <p class="eyebrow">404 · страница не найдена</p>
+        <h1>Страница растворилась.</h1>
+        <p class="tagline">Синхронизируйте дыхание и вернитесь в поток.</p>
+        <button class="cta" data-home>На главную</button>
+      </header>
+
+      <section class="playground" aria-label="Дыхательная игра">
+        <div class="hud">
+          <div>
+            <p class="hud__label">Очки спокойствия</p>
+            <p class="hud__value" data-score>0</p>
+          </div>
+          <div>
+            <p class="hud__label">Лучший результат</p>
+            <p class="hud__value" data-best>0</p>
+          </div>
+          <div>
+            <p class="hud__label">Серия фокуса</p>
+            <p class="hud__value" data-streak>0</p>
+          </div>
+        </div>
+
+        <div class="coach" role="status" aria-live="polite">
+          <p class="coach__phase" data-phase>Вдох</p>
+          <p class="coach__text" data-instruction>
+            Зажмите шар и позвольте груди раскрыться.
+          </p>
+        </div>
+
+        <div class="orb" data-orb tabindex="0" aria-label="Дыхательный шар">
+          <div class="orb__halo" aria-hidden="true"></div>
+          <div class="orb__guide" aria-hidden="true"></div>
+          <div class="orb__player" data-player aria-hidden="true"></div>
+          <p class="orb__hint">Удерживайте здесь</p>
+        </div>
+
+        <div class="timeline">
+          <div class="timeline__progress" data-progress></div>
+          <div class="timeline__labels">
+            <span>Вдох</span>
+            <span>Пауза</span>
+            <span>Выдох</span>
+          </div>
+        </div>
+
+        <button class="ghost" data-reset>Сбросить прогресс</button>
+      </section>
+    </main>
+
+    <script src="./script.js" type="module"></script>
+  </body>
+</html>
