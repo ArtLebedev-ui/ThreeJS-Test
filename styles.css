@@ -62,13 +62,20 @@ body::before {
   backdrop-filter: blur(24px);
 }
 
-.copy h1 {
+.hero h1 {
   font-size: clamp(2rem, 4vw, 3rem);
   margin-top: 0.2rem;
   margin-bottom: 1rem;
 }
 
-.copy p {
+.hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.hero p {
   color: var(--muted);
   line-height: 1.6;
 }
@@ -78,24 +85,6 @@ body::before {
   text-transform: uppercase;
   font-size: 0.85rem;
   color: rgba(129, 199, 255, 0.85);
-}
-
-.tips {
-  list-style: none;
-  padding: 0;
-  margin: 1.5rem 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  color: var(--muted);
-}
-
-.tips kbd {
-  background: rgba(255, 255, 255, 0.08);
-  padding: 0.2rem 0.5rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  font-size: 0.85rem;
 }
 
 .cta {
@@ -113,6 +102,10 @@ body::before {
 .cta:hover,
 .cta:focus-visible {
   transform: translateY(-2px);
+}
+
+.tagline {
+  margin-bottom: 1.5rem;
 }
 
 .playground {
@@ -271,11 +264,6 @@ body.is-holding .orb__player {
   font-size: 0.75rem;
   color: rgba(244, 246, 255, 0.6);
   margin-top: 0.6rem;
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
 }
 
 .ghost {
