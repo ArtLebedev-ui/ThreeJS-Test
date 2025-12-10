@@ -30,8 +30,8 @@
     }
   };
 
-  const resetVideo = (video) => {
-    if (!playedVideos.has(video)) {
+  const resetVideo = (video, { force = false } = {}) => {
+    if (!force && !playedVideos.has(video)) {
       return;
     }
 
@@ -72,6 +72,10 @@
       return;
     }
     processedVideos.add(video);
+
+    video.removeAttribute('autoplay');
+    video.autoplay = false;
+    resetVideo(video, { force: true });
 
     intersectionObserver?.observe(video);
 
