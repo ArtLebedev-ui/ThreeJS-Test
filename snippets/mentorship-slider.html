@@ -76,15 +76,15 @@ window.addEventListener("load", () => {
   const BLUR_OUT = "blur(12px)";
   const EASE_OUT = "power3.out";
   const EASE_IN = "power3.inOut";
-  const CONTENT_PARTS = [".headline_slide", ".description_mentorship", ".button_container"];
 
   let current = 0;
   let autoplayId = null;
   let resizeTimeout = null;
   let isAnimating = false;
+  let pendingIndex = null;
 
-  const getContentParts = slide =>
-    CONTENT_PARTS.map(selector => slide.querySelector(selector)).filter(Boolean);
+  const lineCache = new WeakMap();
+  const partsCache = new WeakMap();
 
   const slideMeta = slides.map((slide, index) => {
     const thumbBox = thumbs[index] || thumbs[0];
@@ -113,6 +113,42 @@ window.addEventListener("load", () => {
     resizeTimeout = setTimeout(setSliderHeight, 120);
   });
 
+  function splitLines(slide) {
+    if (!slide) return [];
+    const cached = lineCache.get(slide);
+    if (cached) return cached;
+
+    const targets = [
+      slide.querySelector(".mentorship-title"),
+      slide.querySelector(".description_mentorship .b_txt")
+    ].filter(Boolean);
+
+    let lines = [];
+    if (typeof SplitType !== "undefined" && targets.length) {
+      const instances = targets.map(el => new SplitType(el, { types: "lines", tagName: "div" }));
+      lines = instances.flatMap(inst => inst.lines || []);
+    } else {
+      lines = targets;
+    }
+
+    lineCache.set(slide, lines);
+    return lines;
+  }
+
+  function getSlideParts(slide) {
+    if (!slide) return { lines: [], button: null };
+    const cached = partsCache.get(slide);
+    if (cached) return cached;
+
+    const parts = {
+      lines: splitLines(slide),
+      button: slide.querySelector(".button_container")
+    };
+
+    partsCache.set(slide, parts);
+    return parts;
+  }
+
   function animateTitle(newIndex) {
     const tl = gsap.timeline({ defaults: { duration: 0.32, ease: EASE_IN } });
     tl.to(titleBar, { autoAlpha: 0, yPercent: 40 })
@@ -128,13 +164,12 @@ window.addEventListener("load", () => {
 
     gsap.to(mainImage, {
       autoAlpha: 0,
-      filter: BLUR_IN,
-      duration: 0.3,
+      duration: 0.32,
       ease: EASE_IN,
       onComplete: () => {
         mainImage.src = imageSrc;
         if (imageSrcset) mainImage.srcset = imageSrcset;
-        gsap.to(mainImage, { autoAlpha: 1, filter: "blur(0px)", duration: 0.34, ease: EASE_OUT });
+        gsap.to(mainImage, { autoAlpha: 1, duration: 0.34, ease: EASE_OUT });
       }
     });
   }
@@ -144,61 +179,100 @@ window.addEventListener("load", () => {
   }
 
   function animateContentTransition(newIndex) {
-    if (isAnimating) return;
+    if (isAnimating) {
+      pendingIndex = newIndex;
+      return false;
+    }
+
     const outgoing = slides[current];
     const incoming = slides[newIndex];
-    if (!outgoing || !incoming) return;
+    if (!outgoing || !incoming) return false;
 
-    const outgoingParts = getContentParts(outgoing);
-    const incomingParts = getContentParts(incoming);
+    const outgoingParts = getSlideParts(outgoing);
+    const incomingParts = getSlideParts(incoming);
     isAnimating = true;
 
     incoming.classList.add("is-active");
     gsap.set(incoming, { autoAlpha: 0, yPercent: 6 });
-    gsap.set(incomingParts, {
+    gsap.set(incomingParts.lines, {
       opacity: 0,
-      yPercent: 22,
+      yPercent: 30,
       z: -120,
-      rotateX: 8,
+      rotateX: 10,
       filter: BLUR_IN
     });
+    if (incomingParts.button) {
+      gsap.set(incomingParts.button, {
+        opacity: 0,
+        yPercent: 35,
+        filter: BLUR_IN
+      });
+    }
 
     const tl = gsap.timeline({
       defaults: { ease: EASE_IN },
       onComplete: () => {
         outgoing.classList.remove("is-active");
-        gsap.set([...outgoingParts, ...incomingParts], { clearProps: "all" });
-        gsap.set(outgoing, { clearProps: "autoAlpha" });
+        gsap.set([...outgoingParts.lines, ...incomingParts.lines], { clearProps: "all" });
+        if (outgoingParts.button) gsap.set(outgoingParts.button, { clearProps: "all" });
+        if (incomingParts.button) gsap.set(incomingParts.button, { clearProps: "all" });
+        gsap.set(outgoing, { clearProps: "autoAlpha,yPercent" });
         isAnimating = false;
+
+        if (pendingIndex !== null) {
+          const queuedIndex = pendingIndex;
+          pendingIndex = null;
+          showSlide(queuedIndex);
+        }
       }
     });
 
-    tl.to(outgoingParts, {
+    tl.to(outgoingParts.lines, {
       opacity: 0,
-      yPercent: -18,
-      z: -120,
-      rotateX: -8,
+      yPercent: -25,
+      z: -140,
+      rotateX: -10,
       filter: BLUR_OUT,
       duration: 0.36,
-      stagger: 0.08
+      stagger: 0.06
     }, 0)
       .to(outgoing, { autoAlpha: 0, duration: 0.28, ease: EASE_IN }, 0)
-      .to(incoming, { autoAlpha: 1, yPercent: 0, duration: 0.32, ease: EASE_OUT }, 0.1)
-      .to(incomingParts, {
+      .to(outgoingParts.button, {
+        opacity: 0,
+        yPercent: -20,
+        filter: BLUR_OUT,
+        duration: 0.28
+      }, "<0.05")
+      .to(incoming, { autoAlpha: 1, yPercent: 0, duration: 0.32, ease: EASE_OUT }, 0.12)
+      .to(incomingParts.lines, {
         opacity: 1,
         yPercent: 0,
         z: 0,
         rotateX: 0,
         filter: "blur(0px)",
-        duration: 0.5,
-        stagger: 0.08,
+        duration: 0.48,
+        stagger: 0.06,
+        ease: EASE_OUT
+      }, "<0.04")
+      .to(incomingParts.button, {
+        opacity: 1,
+        yPercent: 0,
+        filter: "blur(0px)",
+        duration: 0.34,
         ease: EASE_OUT
       }, "<0.05");
+
+    return true;
   }
 
   function showSlide(newIndex) {
     if (newIndex === current || !slides[newIndex]) return;
-    animateContentTransition(newIndex);
+    const started = animateContentTransition(newIndex);
+    if (!started) {
+      pendingIndex = newIndex;
+      return;
+    }
+
     animateTitle(newIndex);
     swapImage(newIndex);
     updateThumbs(newIndex);
@@ -285,6 +359,13 @@ window.addEventListener("load", () => {
 .content_slider .headline_slide,
 .content_slider .description_mentorship,
 .content_slider .button_container {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: opacity, transform, filter;
+}
+
+.content_slider .line {
+  display: block;
   transform-style: preserve-3d;
   backface-visibility: hidden;
   will-change: opacity, transform, filter;
