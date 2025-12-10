@@ -115,11 +115,11 @@ window.addEventListener("load", () => {
 
   function animateTitle(newIndex) {
     const tl = gsap.timeline({ defaults: { duration: 0.32, ease: EASE_IN } });
-    tl.to(titleBar, { autoAlpha: 0, yPercent: 40, filter: BLUR_IN })
+    tl.to(titleBar, { autoAlpha: 0, yPercent: 40 })
       .add(() => {
         titleBar.textContent = slideMeta[newIndex].controlTitle;
       })
-      .to(titleBar, { autoAlpha: 1, yPercent: 0, filter: "blur(0px)" });
+      .to(titleBar, { autoAlpha: 1, yPercent: 0 });
   }
 
   function swapImage(newIndex) {
