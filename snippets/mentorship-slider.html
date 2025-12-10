@@ -1,0 +1,234 @@
+<!-- Mentorship slider embed with synced content + image transitions -->
+<div class="flex_slides">
+  <div class="cms_slider" data-slider="mentorship">
+    <div class="controls">
+      <div class="arrow-left"><img src="https://cdn.prod.website-files.com/69014633b3494c3d0ef793fc/69095b328c1ed1f42d098ac8_arrow-left.svg" loading="lazy" alt="Previous"></div>
+      <div class="title_bar_txt">Practitioner Support</div>
+      <div class="arrow-right"><img src="https://cdn.prod.website-files.com/69014633b3494c3d0ef793fc/69095b333dd09a0978d79778_arrow-right.svg" loading="lazy" alt="Next"></div>
+    </div>
+
+    <div class="w-dyn-list">
+      <div role="list" class="w-dyn-items">
+        <!-- Each mentorship-slide should carry data-control-title to feed the controls text -->
+        <div role="listitem" class="mentorship-slide w-dyn-item is-active" data-control-title="Practitioner Support">
+          <div class="content_slider">
+            <div class="headline_slide">
+              <div class="mentorship-title">Live High</div>
+            </div>
+            <div class="description_mentorship">
+              <div class="b_txt">A constantly growing library of clinical, psychological, and business calls...</div>
+            </div>
+            <div class="button_container">
+              <a href="#" class="button_general w-inline-block">
+                <div class="g_button_txt"><div>All Seminars</div></div>
+                <div class="arrow_button"><img src="https://cdn.prod.website-files.com/69014633b3494c3d0ef793fc/6906744bc45e42ad5fe6cd95_arrow_header.svg" loading="lazy" alt=""></div>
+              </a>
+            </div>
+          </div>
+        </div>
+        <!-- Duplicate CMS items continue here -->
+      </div>
+    </div>
+  </div>
+
+  <div class="image_collections">
+    <div class="thumbnails_list">
+      <div class="thumbnail_box">
+        <img src="https://cdn.prod.website-files.com/69014633b3494c3d0ef793fc/690b8a1136cd0d6ef48842f3_img-1.avif"
+             data-main-srcset="https://cdn.prod.website-files.com/69014633b3494c3d0ef793fc/690b8a1136cd0d6ef48842f3_img-1-p-500.avif 500w, https://cdn.prod.website-files.com/69014633b3494c3d0ef793fc/690b8a1136cd0d6ef48842f3_img-1-p-800.avif 800w, https://cdn.prod.website-files.com/69014633b3494c3d0ef793fc/690b8a1136cd0d6ef48842f3_img-1.avif 1556w"
+             alt="Smiling female dentist in a white coat showing a dental model to a seated patient." class="thumbnail_image">
+      </div>
+      <!-- ... more thumbnails ... -->
+    </div>
+
+    <div class="main_slide">
+      <img src="https://cdn.prod.website-files.com/69014633b3494c3d0ef793fc/690b8a11db49a7507e75e463_img-2.avif"
+           sizes="(max-width: 1556px) 100vw, 1556px"
+           srcset="https://cdn.prod.website-files.com/69014633b3494c3d0ef793fc/690b8a11db49a7507e75e463_img-2-p-500.avif 500w, https://cdn.prod.website-files.com/69014633b3494c3d0ef793fc/690b8a11db49a7507e75e463_img-2.avif 1556w"
+           alt="Smiling female dentist in a white coat showing a dental model to a seated patient."
+           class="main_image">
+    </div>
+  </div>
+</div>
+
+<script>
+window.addEventListener("load", () => {
+  const slider = document.querySelector(".cms_slider[data-slider='mentorship']");
+  const slides = Array.from(document.querySelectorAll(".mentorship-slide"));
+  const thumbs = Array.from(document.querySelectorAll(".thumbnail_box"));
+  const mainImage = document.querySelector(".main_image");
+  const titleBar = document.querySelector(".title_bar_txt");
+  const next = document.querySelector(".arrow-right");
+  const prev = document.querySelector(".arrow-left");
+
+  if (!slider || !slides.length || !thumbs.length || !mainImage || !titleBar) return;
+
+  const AUTOPLAY_DELAY = 8000;
+  let current = 0;
+  let autoplayId = null;
+  let resizeTimeout = null;
+
+  const slideMeta = slides.map((slide, index) => {
+    const thumbImg = thumbs[index]?.querySelector("img");
+    return {
+      slide,
+      controlTitle:
+        slide.getAttribute("data-control-title") ||
+        thumbImg?.getAttribute("alt") ||
+        slide.querySelector(".mentorship-title")?.textContent.trim() ||
+        "",
+      imageSrc: thumbImg?.dataset.mainSrc || thumbImg?.currentSrc || thumbImg?.src || "",
+      imageSrcset: thumbImg?.dataset.mainSrcset || thumbImg?.getAttribute("srcset") || ""
+    };
+  });
+
+  const setSliderHeight = () => {
+    const maxHeight = Math.max(...slides.map(slide => slide.scrollHeight));
+    slider.style.setProperty("--mentorship-max-height", `${maxHeight}px`);
+    slider.style.minHeight = `${maxHeight}px`;
+  };
+
+  setSliderHeight();
+
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(setSliderHeight, 120);
+  });
+
+  function fadeSlide(newIndex) {
+    const outgoing = slides[current];
+    const incoming = slides[newIndex];
+
+    const tl = gsap.timeline({ defaults: { duration: 0.28, ease: "power2.out" } });
+
+    tl.to(outgoing, { autoAlpha: 0, filter: "blur(16px)", onComplete: () => outgoing.classList.remove("is-active") })
+      .add(() => {
+        incoming.classList.add("is-active");
+        incoming.style.removeProperty("filter");
+      })
+      .fromTo(incoming, { autoAlpha: 0, filter: "blur(16px)" }, { autoAlpha: 1, filter: "blur(0px)" });
+  }
+
+  function fadeTitle(newIndex) {
+    const tl = gsap.timeline({ defaults: { duration: 0.22, ease: "power2.out" } });
+
+    tl.to(titleBar, { autoAlpha: 0, filter: "blur(12px)", y: 8 })
+      .add(() => {
+        titleBar.textContent = slideMeta[newIndex].controlTitle;
+      })
+      .to(titleBar, { autoAlpha: 1, filter: "blur(0px)", y: 0 });
+  }
+
+  function swapImage(newIndex) {
+    const { imageSrc, imageSrcset } = slideMeta[newIndex];
+    if (!imageSrc) return;
+
+    gsap.to(mainImage, {
+      autoAlpha: 0,
+      filter: "blur(18px)",
+      duration: 0.22,
+      ease: "power2.in",
+      onComplete: () => {
+        mainImage.src = imageSrc;
+        if (imageSrcset) mainImage.srcset = imageSrcset;
+        gsap.to(mainImage, { autoAlpha: 1, filter: "blur(0px)", duration: 0.26, ease: "power2.out" });
+      }
+    });
+  }
+
+  function updateThumbs(newIndex) {
+    thumbs.forEach((thumb, idx) => thumb.classList.toggle("is-active", idx === newIndex));
+  }
+
+  function showSlide(newIndex) {
+    if (newIndex === current || !slides[newIndex]) return;
+    fadeSlide(newIndex);
+    fadeTitle(newIndex);
+    swapImage(newIndex);
+    updateThumbs(newIndex);
+    current = newIndex;
+    restartAutoplay();
+  }
+
+  function goNext() {
+    const nextIndex = (current + 1) % slides.length;
+    showSlide(nextIndex);
+  }
+
+  function goPrev() {
+    const prevIndex = (current - 1 + slides.length) % slides.length;
+    showSlide(prevIndex);
+  }
+
+  function startAutoplay() {
+    autoplayId = window.setInterval(goNext, AUTOPLAY_DELAY);
+  }
+
+  function stopAutoplay() {
+    window.clearInterval(autoplayId);
+    autoplayId = null;
+  }
+
+  function restartAutoplay() {
+    stopAutoplay();
+    startAutoplay();
+  }
+
+  next?.addEventListener("click", () => {
+    stopAutoplay();
+    goNext();
+  });
+
+  prev?.addEventListener("click", () => {
+    stopAutoplay();
+    goPrev();
+  });
+
+  thumbs.forEach((thumb, index) => {
+    thumb.addEventListener("click", () => {
+      stopAutoplay();
+      showSlide(index);
+    });
+  });
+
+  slides[current].classList.add("is-active");
+  updateThumbs(current);
+  titleBar.textContent = slideMeta[current].controlTitle;
+  startAutoplay();
+});
+</script>
+
+<style>
+.cms_slider {
+  position: relative;
+  overflow: hidden;
+  min-height: var(--mentorship-max-height, auto);
+}
+
+.mentorship-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity, filter;
+}
+
+.mentorship-slide.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.title_bar_txt,
+.main_image {
+  will-change: opacity, filter, transform;
+}
+
+.thumbnail_box {
+  cursor: pointer;
+}
+
+.thumbnail_box.is-active {
+  outline: 1px solid rgba(255, 255, 255, 0.4);
+}
+</style>
