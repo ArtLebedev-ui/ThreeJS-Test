@@ -74,6 +74,8 @@ window.addEventListener("load", () => {
   const AUTOPLAY_DELAY = 8000;
   const BLUR_IN = "blur(18px)";
   const BLUR_OUT = "blur(12px)";
+  const EASE_OUT = "power3.out";
+  const EASE_IN = "power3.inOut";
   const CONTENT_PARTS = [".headline_slide", ".description_mentorship", ".button_container"];
 
   let current = 0;
@@ -112,7 +114,7 @@ window.addEventListener("load", () => {
   });
 
   function animateTitle(newIndex) {
-    const tl = gsap.timeline({ defaults: { duration: 0.22, ease: "power2.out" } });
+    const tl = gsap.timeline({ defaults: { duration: 0.32, ease: EASE_IN } });
     tl.to(titleBar, { autoAlpha: 0, yPercent: 40, filter: BLUR_IN })
       .add(() => {
         titleBar.textContent = slideMeta[newIndex].controlTitle;
@@ -127,12 +129,12 @@ window.addEventListener("load", () => {
     gsap.to(mainImage, {
       autoAlpha: 0,
       filter: BLUR_IN,
-      duration: 0.22,
-      ease: "power2.in",
+      duration: 0.3,
+      ease: EASE_IN,
       onComplete: () => {
         mainImage.src = imageSrc;
         if (imageSrcset) mainImage.srcset = imageSrcset;
-        gsap.to(mainImage, { autoAlpha: 1, filter: "blur(0px)", duration: 0.26, ease: "power2.out" });
+        gsap.to(mainImage, { autoAlpha: 1, filter: "blur(0px)", duration: 0.34, ease: EASE_OUT });
       }
     });
   }
@@ -152,17 +154,17 @@ window.addEventListener("load", () => {
     isAnimating = true;
 
     incoming.classList.add("is-active");
-    gsap.set(incoming, { autoAlpha: 0 });
+    gsap.set(incoming, { autoAlpha: 0, yPercent: 6 });
     gsap.set(incomingParts, {
       opacity: 0,
-      yPercent: 18,
+      yPercent: 22,
       z: -120,
       rotateX: 8,
       filter: BLUR_IN
     });
 
     const tl = gsap.timeline({
-      defaults: { ease: "power3.inOut" },
+      defaults: { ease: EASE_IN },
       onComplete: () => {
         outgoing.classList.remove("is-active");
         gsap.set([...outgoingParts, ...incomingParts], { clearProps: "all" });
@@ -173,25 +175,25 @@ window.addEventListener("load", () => {
 
     tl.to(outgoingParts, {
       opacity: 0,
-      yPercent: -12,
-      z: -100,
-      rotateX: -6,
+      yPercent: -18,
+      z: -120,
+      rotateX: -8,
       filter: BLUR_OUT,
-      duration: 0.28,
-      stagger: 0.05
+      duration: 0.36,
+      stagger: 0.08
     }, 0)
-      .to(outgoing, { autoAlpha: 0, duration: 0.22 }, 0)
-      .to(incoming, { autoAlpha: 1, duration: 0.22 }, 0.08)
+      .to(outgoing, { autoAlpha: 0, duration: 0.28, ease: EASE_IN }, 0)
+      .to(incoming, { autoAlpha: 1, yPercent: 0, duration: 0.32, ease: EASE_OUT }, 0.1)
       .to(incomingParts, {
         opacity: 1,
         yPercent: 0,
         z: 0,
         rotateX: 0,
         filter: "blur(0px)",
-        duration: 0.36,
-        stagger: 0.06,
-        ease: "power3.out"
-      }, "<0.04");
+        duration: 0.5,
+        stagger: 0.08,
+        ease: EASE_OUT
+      }, "<0.05");
   }
 
   function showSlide(newIndex) {
