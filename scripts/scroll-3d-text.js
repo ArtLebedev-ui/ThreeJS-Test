@@ -87,45 +87,68 @@ document.addEventListener('DOMContentLoaded', () => {
   master.to('.center_txt._2', { opacity: 0, y: -20, duration: 0.2, ease: 'none' });
 
   master
-    .to(['.central_words .tag_flex:nth-child(3)', '.central_words .tag_flex:nth-child(4)'], {
-      opacity: 1,
-      y: 0,
-      duration: 0.4,
-      ease: 'none',
-    })
-    .to(
-      ['.central_words .tag_flex:nth-child(2)', '.central_words .tag_flex:nth-child(5)'],
+    .fromTo(
+      ['.central_words .tag_flex:nth-child(3)', '.central_words .tag_flex:nth-child(4)'],
+      {
+        opacity: 0,
+        y: 20,
+        filter: blurIn,
+      },
       {
         opacity: 1,
         y: 0,
+        filter: 'blur(0px)',
         duration: 0.4,
-        ease: 'none',
+        ease: 'power3.out',
+      }
+    )
+    .fromTo(
+      ['.central_words .tag_flex:nth-child(2)', '.central_words .tag_flex:nth-child(5)'],
+      {
+        opacity: 0,
+        y: 20,
+        filter: blurIn,
+      },
+      {
+        opacity: 1,
+        y: 0,
+        filter: 'blur(0px)',
+        duration: 0.4,
+        ease: 'power3.out',
       },
       '>0.2'
     )
-    .to(
+    .fromTo(
       ['.central_words .tag_flex:nth-child(1)', '.central_words .tag_flex:nth-child(6)'],
+      {
+        opacity: 0,
+        y: 20,
+        filter: blurIn,
+      },
       {
         opacity: 1,
         y: 0,
+        filter: 'blur(0px)',
         duration: 0.4,
-        ease: 'none',
+        ease: 'power3.out',
       },
       '>0.2'
     )
     .to(['.central_words .tag_flex:nth-child(1)', '.central_words .tag_flex:nth-child(6)'], {
       opacity: 0,
       y: -20,
+      filter: blurOut,
       duration: 0.3,
-      ease: 'none',
+      ease: 'power3.in',
     })
     .to(
       ['.central_words .tag_flex:nth-child(2)', '.central_words .tag_flex:nth-child(5)'],
       {
         opacity: 0,
         y: -20,
+        filter: blurOut,
         duration: 0.3,
-        ease: 'none',
+        ease: 'power3.in',
       },
       '>0.15'
     )
@@ -134,8 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
       {
         opacity: 0,
         y: -20,
+        filter: blurOut,
         duration: 0.3,
-        ease: 'none',
+        ease: 'power3.in',
       },
       '>0.15'
     );
@@ -174,6 +198,9 @@ document.head.insertAdjacentHTML(
   background-color: #fff;
   transform-origin: left center;
   will-change: width;
+}
+.central_words .tag_flex {
+  will-change: transform, opacity, filter;
 }
 </style>`
 );
