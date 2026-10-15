@@ -1,31 +1,39 @@
 # JURY — intro
 
 30-second cinematic intro for the Boosty rubric with site reviews from the Awwwards jury panel.
-2560×1600, 30 fps, black background, huge type, glossy 3D. Everything is procedural: three.js scenes,
-Canvas 2D typography, and a synthesized soundtrack locked to the same timeline.
+2560×1600, 30 fps, black background. Everything is procedural: three.js scenes, Canvas 2D typography
+in Neue Montreal, and a synthesized soundtrack locked to the same timeline.
 
-## Storyboard
+## Idea
+
+One protagonist for the whole film: a black 16:10 glass slab — a website. Every shot looks at the same
+object from a new angle, and every cut carries meaning from the previous shot into the next one.
 
 | Time | Shot | Idea |
 | --- | --- | --- |
-| 0.0–3.0 | Open | Macro of an unknown glossy edge catching a hairline light (it is the juror's cursor) |
-| 3.0–6.5 | THOUSANDS OF SITES. | Flight through hundreds of floating website screens |
-| 6.5–9.3 | ONE JURY. | A wall of sites; the cursor clicks one and everything else goes dark |
-| 9.3–12.1 | DESIGN 40% | The chosen site with luminous construction grid and golden-ratio arc |
-| 12.1–14.9 | USABILITY 30% | A monumental cursor double-clicks a mirror floor, light rings ripple |
-| 14.9–17.7 | CREATIVITY 20% | A perfect sphere of black liquid metal that refuses to stay a sphere |
-| 17.7–20.5 | CONTENT 10% | A landscape of extruded text lines rising out of the dark |
-| 20.5–24.7 | ONE SCORE. | Mechanical drums of 3D numerals lock onto the weighted score (8.46) |
-| 24.7–30.0 | JURY | Monumental extruded title, light sweep, subtitle, fade to black |
+| 0.0–2.8 | Prologue | A point stretches into a line — the edge of the slab seen side-on. The camera orbits to its face. "Every year," |
+| 2.8–5.6 | Thousands | A field of sites visible only through the letters; we dive through the T into the field. |
+| 5.6–7.0 | Noise | The sites lose resolution and switch off in a wave. "Most of it is noise." One survives. |
+| 7.0–9.8 | One jury. | The last slab rises out of the field and turns to face us. |
+| 9.8–12.6 | (01) Design 40% | The golden grid hidden inside the site's layout is drawn over it, with the spiral. |
+| 12.6–15.4 | (02) Usability 30% | The slab lies flat like a desk; a cursor finds the nav and the CTA. |
+| 15.4–18.2 | (03) Creativity 20% | The slab refuses to stay a slab and turns into liquid metal. |
+| 18.2–21.0 | (04) Content 10% | The slab returns typeset; one sentence lights up as it is read: "Feeling over noise." |
+| 21.0–24.85 | Verdict | The site is cut into slices as wide as the weights, they rise by contribution, fuse, sink — 8.46. |
+| 24.85–30.0 | Jury. | We fly into the screen until its glass is the frame; the title is set inside. The red period closes the film. |
 
 Cuts sit on a 0.7 s beat grid (≈86 BPM) shared with the soundtrack.
 
+## Fonts
+
+Neue Montreal is a commercial typeface and is not committed to this public repository. Put the eight
+`NeueMontreal-{Light,Regular,Medium,Bold,Italic,LightItalic,MediumItalic,BoldItalic}.otf` files into
+`public/fonts/` before running anything. The font has no Cyrillic, so the copy is in English.
+
 ## Editing
 
-All copy, timings, criteria scores and colours are in `src/config.js`
-(title, subtitle, episode, HUD lines, per-shot words). The final score is computed from the criteria
-with the real Awwwards weights. Fragment Mono has no Cyrillic, so Russian captions fall back to IBM Plex Mono;
-Inter Tight (big type and 3D type) supports Cyrillic.
+All copy, timings, criteria scores and colours are in `src/config.js`. The final score is computed from the
+criteria with the real Awwwards weights.
 
 ## Commands
 
