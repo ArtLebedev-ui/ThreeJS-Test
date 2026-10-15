@@ -1,0 +1,19 @@
+{
+  "name": "jury-intro",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "30s cinematic intro for the JURY rubric (Awwwards site reviews), rendered with three.js",
+  "scripts": {
+    "dev": "vite",
+    "render": "node scripts/render.mjs --out out/frames --resume",
+    "preview": "node scripts/render.mjs --scale 0.5 --fast --out out/preview",
+    "sound": "node scripts/sound.mjs out/sound.wav",
+    "encode": "bash scripts/encode.sh out/frames out/jury-intro-2560x1600.mp4"
+  },
+  "dependencies": {
+    "puppeteer-core": "^23.11.1",
+    "three": "^0.170.0",
+    "vite": "^5.4.21"
+  }
+}
