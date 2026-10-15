@@ -184,8 +184,8 @@ const beat = config.beat;
 drone(0, S.score[1] + 0.3, { gain: 0.22 });
 whoosh(0.2, 2.6, { gain: 0.22, f0: 900, f1: 5000, pan0: -0.8, pan1: 0.8 });
 blips(0.45, 1.4, { gain: 0.035 });
-riser(S.field[0], 1.6, { gain: 0.55 });
-riser(S.field[0], 0.5, { gain: 0.35, f0: 2000, f1: 12000 });
+riser(S.field[0], 1.6, { gain: 0.38 });
+riser(S.field[0], 0.5, { gain: 0.25, f0: 2000, f1: 12000 });
 
 // Cuts.
 impact(S.field[0], { size: 1.3, gain: 1 });

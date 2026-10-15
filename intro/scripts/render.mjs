@@ -19,7 +19,7 @@ const args = Object.fromEntries(
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const outDir = path.resolve(root, args.out ?? 'out/frames');
 fs.mkdirSync(outDir, { recursive: true });
-const port = 5173 + Number(String(args.worker ?? '0/1').split('/')[0]) + 10;
+const port = Number(args.port ?? 5183 + Number(String(args.worker ?? '0/1').split('/')[0]));
 
 const server = await createServer({
   root,

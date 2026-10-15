@@ -146,7 +146,8 @@ export class Engine {
     const canvas = document.createElement('canvas');
     canvas.width = this.ovW;
     canvas.height = this.ovH;
-    const ctx = canvas.getContext('2d');
+    // A CPU-backed canvas: uploading a GPU-accelerated canvas every frame left stale tiles in the texture.
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.NoColorSpace;
     tex.minFilter = THREE.LinearFilter;

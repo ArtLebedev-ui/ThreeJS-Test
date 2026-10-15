@@ -67,7 +67,7 @@ export function createField(A) {
       kinetic(ctx, w2, { x, y: y + size * 0.86, size, pIn: range(lt, 0.45, 1.2), pOut: out, stagger: 0.07 });
     },
     post: (lt) => ({ bloom: 0.75, flash: 0.5 * Math.pow(1 - range(lt, 0, 0.25), 2) }),
-    samples: (lt) => (lt > 2.2 ? 6 : 3),
+    samples: (lt) => (lt > 2.75 ? 16 : lt > 2.2 ? 6 : 3),
     hud(lt) {
       const n = Math.floor(2147 * ease.outCubic(range(lt, 0.1, 2.6)));
       return {
