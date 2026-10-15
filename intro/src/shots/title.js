@@ -81,9 +81,9 @@ export function createTitle(A) {
     overlay(ctx, ctxD, lt, t, frame) {
       const vis = 1 - range(lt, dur - 0.9, dur - 0.55);
       const y = H * 0.78;
-      const lw = 260 * ease.outExpo(range(lt, 2.3, 3.1));
+      const lw = 260 * ease.outExpo(range(lt, 1.9, 2.7));
       hairline(ctx, W / 2 - lw, y - 52, W / 2 + lw, y - 52, { alpha: 0.4 * vis, width: 1.5 });
-      decode(ctx, config.subtitle, W / 2, y, range(lt, 2.5, 3.4), { size: 30, align: 'center', alpha: vis, frame, seed: 11 });
+      decode(ctx, config.subtitle, W / 2, y, range(lt, 2.1, 2.8), { size: 30, align: 'center', alpha: vis, frame, seed: 11 });
     },
     post: (lt) => ({
       bloom: 0.7,
