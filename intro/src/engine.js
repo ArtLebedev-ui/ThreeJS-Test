@@ -9,14 +9,17 @@ const FinalShader = {
     tDiffuse: { value: null },
     tOv: { value: null },
     tOvD: { value: null },
+    tOvM: { value: null },
+    uMask: { value: 0 },
+    uMaskOut: { value: 0 },
     uRes: { value: new THREE.Vector2() },
     uFrame: { value: 0 },
     uExposure: { value: 1 },
     uFade: { value: 1 },
     uFlash: { value: 0 },
-    uCA: { value: 1 },
-    uGrain: { value: 0.045 },
-    uVignette: { value: 0.55 },
+    uCA: { value: 0 },
+    uGrain: { value: 0.03 },
+    uVignette: { value: 0.25 },
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;
@@ -24,9 +27,9 @@ const FinalShader = {
   `,
   fragmentShader: /* glsl */ `
     precision highp float;
-    uniform sampler2D tDiffuse, tOv, tOvD;
+    uniform sampler2D tDiffuse, tOv, tOvD, tOvM;
     uniform vec2 uRes;
-    uniform float uFrame, uExposure, uFade, uFlash, uCA, uGrain, uVignette;
+    uniform float uFrame, uExposure, uFade, uFlash, uCA, uGrain, uVignette, uMask, uMaskOut;
     varying vec2 vUv;
 
     vec3 aces(vec3 x) {
@@ -58,6 +61,8 @@ const FinalShader = {
       hdr.b = texture2D(tDiffuse, uv + off).b;
 
       vec3 col = toSRGB(aces(hdr * uExposure));
+      float m = texture2D(tOvM, uv).a;
+      col *= mix(1.0, mix(uMaskOut, 1.0, m), uMask);
 
       vec4 ovd = texture2D(tOvD, uv);
       col = mix(col, abs(ovd.rgb - col), ovd.a);
@@ -138,8 +143,10 @@ export class Engine {
 
     this.ov = this.makeOverlay();
     this.ovD = this.makeOverlay();
+    this.ovM = this.makeOverlay();
     this.final.uniforms.tOv.value = this.ov.tex;
     this.final.uniforms.tOvD.value = this.ovD.tex;
+    this.final.uniforms.tOvM.value = this.ovM.tex;
   }
 
   makeOverlay() {
@@ -178,22 +185,23 @@ export class Engine {
     }
     r.setRenderTarget(null);
 
-    for (const o of [this.ov, this.ovD]) o.ctx.clearRect(0, 0, this.ovW, this.ovH);
-    drawOverlay(this.ov.ctx, this.ovD.ctx, t);
-    this.ov.tex.needsUpdate = true;
-    this.ovD.tex.needsUpdate = true;
+    for (const o of [this.ov, this.ovD, this.ovM]) o.ctx.clearRect(0, 0, this.ovW, this.ovH);
+    drawOverlay(this.ov.ctx, this.ovD.ctx, this.ovM.ctx, t);
+    for (const o of [this.ov, this.ovD, this.ovM]) o.tex.needsUpdate = true;
 
     const u = this.final.uniforms;
     u.uFrame.value = frame;
     u.uExposure.value = post.exposure ?? 1;
     u.uFade.value = post.fade ?? 1;
     u.uFlash.value = post.flash ?? 0;
-    u.uCA.value = post.ca ?? 1;
-    u.uGrain.value = post.grain ?? 0.045;
-    u.uVignette.value = post.vignette ?? 0.55;
-    this.bloom.strength = post.bloom ?? 0.6;
-    this.bloom.radius = post.bloomRadius ?? 0.55;
-    this.bloom.threshold = post.bloomThreshold ?? 0.82;
+    u.uCA.value = post.ca ?? 0;
+    u.uGrain.value = post.grain ?? 0.03;
+    u.uVignette.value = post.vignette ?? 0.25;
+    u.uMask.value = post.mask ?? 0;
+    u.uMaskOut.value = post.maskOut ?? 0;
+    this.bloom.strength = post.bloom ?? 0.25;
+    this.bloom.radius = post.bloomRadius ?? 0.4;
+    this.bloom.threshold = post.bloomThreshold ?? 0.9;
     this.composer.render();
   }
 }

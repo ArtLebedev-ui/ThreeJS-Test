@@ -2,9 +2,10 @@
 // Usage: node scripts/sound.mjs [out/sound.wav]
 import fs from 'node:fs';
 import path from 'node:path';
-import { config } from '../src/config.js';
-import { SCORE_LANDS, SCORE_SPIN_START, drumAngle } from '../src/shots/score-timing.js';
-import { USABILITY_CLICKS } from '../src/shots/criteria-timing.js';
+import { config, finalScore } from '../src/config.js';
+import { SCORE, rollEnd } from '../src/shots/score-timing.js';
+import { USABILITY_CLICKS, CREATIVITY_MORPH, CONTENT_HIGHLIGHT } from '../src/shots/criteria-timing.js';
+import { TITLE } from '../src/shots/title-timing.js';
 
 const SR = 48000;
 const N = Math.round(config.duration * SR);
@@ -179,101 +180,156 @@ function drone(start, dur, { gain = 0.25 } = {}) {
 // ---------------------------------------------------------------- score
 
 const beat = config.beat;
+const at = (key, dt = 0) => S[key][0] + dt;
 
-// Opening: a low hum, a light sweep and decoding text, pulled into the first cut.
-drone(0, S.score[1] + 0.3, { gain: 0.22 });
-whoosh(0.2, 2.6, { gain: 0.22, f0: 900, f1: 5000, pan0: -0.8, pan1: 0.8 });
-blips(0.45, 1.4, { gain: 0.035 });
-riser(S.field[0], 1.6, { gain: 0.38 });
-riser(S.field[0], 0.5, { gain: 0.25, f0: 2000, f1: 12000 });
-
-// Cuts.
-impact(S.field[0], { size: 1.3, gain: 1 });
-impact(S.one[0], { size: 0.9, gain: 0.75, tone: 0.9 });
-config.criteria.forEach((c, i) => impact(S[c.key][0], { size: 0.8, gain: 0.7, tone: 1 + i * 0.06 }));
-impact(S.score[0], { size: 1, gain: 0.8, tone: 0.8 });
-impact(S.title[0], { size: 2.2, gain: 1.1, tone: 0.75 });
-
-// Flight through the field: rushing air that accelerates into the next cut.
-{
-  const f = svf();
-  const [a, b] = S.field;
-  mix(a, b - a, (t) => {
-    const p = t / (b - a);
-    const fc = 500 + 3500 * Math.pow(p, 2.5);
-    return f(noise(), fc, 0.9).bp * (0.5 + 1.4 * Math.pow(p, 3)) * Math.min(1, t * 6);
-  }, { gain: 0.5, send: 0.2, panFn: (t) => Math.sin(t * 1.7) * 0.5 });
-  riser(b, 0.9, { gain: 0.35, f0: 800, f1: 9000 });
-  for (let k = 0; k < 9; k++) whoosh(a + 0.2 + k * 0.33 + rnd() * 0.1, 0.35, { gain: 0.12, f0: 700, f1: 3000, pan0: rnd() * 2 - 1, pan1: rnd() * 2 - 1 });
+/** A soft pure tone with a long tail — used for the glint and the closing dot. */
+function ping(t0, { freq = 2600, gain = 0.12, decay = 1.2, pan = 0 } = {}) {
+  mix(t0, decay * 4, (t) => (Math.sin(TAU * freq * t) + 0.3 * Math.sin(TAU * freq * 2.01 * t)) * env(t, 0.003, decay), {
+    gain,
+    pan,
+    send: 0.6,
+  });
 }
 
-// The juror's click.
-whoosh(S.one[0] + 0.15, 0.9, { gain: 0.25, pan0: 0.7, pan1: 0 });
-click(S.one[0] + 1.4, { gain: 0.8 });
-riser(S.design[0], 0.7, { gain: 0.3 });
-
-// Heartbeat pulse on the beat grid from the first cut to the verdict.
-for (let t = S.field[0]; t < S.score[0] - 0.01; t += beat) pulse(t, { gain: t < S.design[0] ? 0.35 : 0.5 });
-
-// Clock-like 16th ticks across the four criteria, growing in intensity.
-for (let t = S.design[0]; t < S.score[0] - 0.01; t += beat / 4) {
-  const p = (t - S.design[0]) / (S.score[0] - S.design[0]);
-  const step = Math.round((t - S.design[0]) / (beat / 4)) % 4;
-  tick(t, { gain: (step === 2 ? 0.1 : 0.045) * (0.6 + p), pan: step % 2 ? 0.35 : -0.35 });
+/** Ticks for a per-letter / per-word reveal that mirrors overlay.type()'s stagger. */
+function typeTicks(t0, dur, units, stagger, { gain = 0.06, freq = 3800 } = {}) {
+  const span = 1 + stagger * Math.max(0, units - 1);
+  for (let k = 0; k < units; k++) tick(t0 + ((k * stagger) / span) * dur, { gain, freq: freq + (k % 3) * 300, pan: (k / Math.max(1, units - 1) - 0.5) * 0.6 });
 }
 
-// Per-criterion accents.
-whoosh(S.design[0] + 0.05, 1.6, { gain: 0.16, f0: 2000, f1: 7000 });
-blips(S.design[0] + 1.0, 0.8, { gain: 0.03 });
-whoosh(S.usability[0], 0.9, { gain: 0.22, pan0: 0.5, pan1: -0.1, f0: 300, f1: 1500 });
-USABILITY_CLICKS.forEach((c) => click(S.usability[0] + c, { gain: 0.85 }));
+function glide(t0, dur, f0, f1, { gain = 0.1 } = {}) {
+  let ph = 0;
+  mix(t0, dur, (t) => {
+    const p = t / dur;
+    ph += (TAU * (f0 * Math.pow(f1 / f0, p))) / SR;
+    return Math.sin(ph) * Math.sin(Math.PI * Math.min(1, p * 1.2)) ** 2;
+  }, { gain, send: 0.5 });
+}
+
+/** Granular digital crackle: the field of sites degrading. */
+function crackle(t0, dur, { gain = 0.12, density = 220 } = {}) {
+  const count = Math.floor(dur * density);
+  for (let k = 0; k < count; k++) {
+    const tt = rnd() * dur;
+    const fade = 1 - tt / dur;
+    const fq = 600 + rnd() * 5000;
+    const len = 0.004 + rnd() * 0.02;
+    mix(t0 + tt, len, (t) => Math.sign(Math.sin(TAU * fq * t)) * (1 - t / len), {
+      gain: gain * fade * (0.3 + rnd()),
+      pan: rnd() * 1.6 - 0.8,
+      send: 0.15,
+    });
+  }
+}
+
+drone(0, config.duration - 0.4, { gain: 0.16 });
+
+// Prologue: a point of light, a line, an edge.
+ping(0.35, { freq: 2637, gain: 0.1, decay: 1.4 });
+glide(0.7, 0.8, 330, 1320, { gain: 0.05 });
+riser(1.4, 0.7, { gain: 0.2, f0: 1500, f1: 9000 });
+impact(1.4, { size: 0.6, gain: 0.45, tone: 1.3 });
+whoosh(1.55, 1.5, { gain: 0.16, f0: 1200, f1: 6000, pan0: 0.7, pan1: -0.7 });
+typeTicks(1.75, 0.85, 2, 0.25, { gain: 0.08, freq: 2400 });
+riser(at('thousands'), 0.9, { gain: 0.32 });
+
+// Thousands: every letter lands, then we dive through the T.
+impact(at('thousands'), { size: 1.1, gain: 0.9 });
+typeTicks(at('thousands'), 1.0, 9, 0.07, { gain: 0.07 });
+riser(at('thousands', 2.1), 0.8, { gain: 0.45, f0: 400, f1: 8000 });
+whoosh(at('thousands', 1.3), 0.95, { gain: 0.4, f0: 300, f1: 2400, pan0: 0, pan1: 0 });
+impact(at('thousands', 2.1), { size: 1.4, gain: 0.7, tone: 0.8 });
+typeTicks(at('thousands', 2.0), 0.7, 3, 0.12, { gain: 0.05 });
+typeTicks(at('thousands', 2.1), 0.7, 3, 0.12, { gain: 0.05 });
+
+// Noise: the field degrades and switches off towards one survivor.
+crackle(at('noise'), 1.15, { gain: 0.08 });
+for (let k = 0; k < 14; k++) tick(at('noise', 0.4 + k * 0.055 + rnd() * 0.02), { gain: 0.06 * (1 - k / 16), freq: 1800 + rnd() * 900, pan: rnd() * 1.6 - 0.8 });
+typeTicks(at('noise', 0.1), 0.65, 3, 0.15, { gain: 0.05 });
+ping(at('noise', 1.2), { freq: 1318, gain: 0.06, decay: 0.8 });
+
+// One jury: the last slab rises.
+impact(at('one'), { size: 0.9, gain: 0.75, tone: 0.9 });
+whoosh(at('one', 0.05), 1.5, { gain: 0.26, f0: 200, f1: 1400, pan0: 0, pan1: 0 });
+glide(at('one', 0.1), 1.4, 110, 220, { gain: 0.06 });
+impact(at('one', 1.0), { size: 0.5, gain: 0.4, tone: 1.2 });
+impact(at('one', 1.15), { size: 0.5, gain: 0.35, tone: 1.35 });
+riser(at('design'), 0.7, { gain: 0.3 });
+
+// Heartbeat pulse on the beat grid through the criteria and the verdict.
+for (let t = at('design'); t < at('score', 2.3) - 0.01; t += beat) pulse(t, { gain: 0.45 });
+for (let t = at('design'); t < at('score') - 0.01; t += beat / 4) {
+  const step = Math.round((t - at('design')) / (beat / 4)) % 4;
+  tick(t, { gain: step === 2 ? 0.05 : 0.022, pan: step % 2 ? 0.35 : -0.35 });
+}
+
+config.criteria.forEach((c, i) => {
+  impact(at(c.key), { size: 0.75, gain: 0.65, tone: 1 + i * 0.06 });
+  typeTicks(at(c.key, 0.1), 0.9, c.word.length, 0.05, { gain: 0.045 });
+});
+
+// Design: lines are drawn like a pen on glass, the spiral rings.
+for (let k = 0; k < 6; k++) whoosh(at('design', 0.45 + k * 0.12), 0.35, { gain: 0.07, f0: 3000, f1: 7000, pan0: -0.4, pan1: 0.4 });
+glide(at('design', 1.05), 0.7, 880, 1760, { gain: 0.035 });
+
+// Usability: two precise clicks.
+whoosh(at('usability', 0.1), 1.2, { gain: 0.14, pan0: 0.6, pan1: -0.1, f0: 400, f1: 1600 });
+USABILITY_CLICKS.forEach((c) => click(at('usability', c), { gain: 0.75 }));
+
+// Creativity: a liquid swell.
 {
   const f = svf();
   const [a, b] = S.creativity;
-  mix(a + 0.2, b - a - 0.2, (t) => {
-    const fc = 250 + 900 * (0.5 + 0.5 * Math.sin(t * 5 + Math.sin(t * 2.3) * 2));
-    return f(noise(), fc, 4).bp * Math.min(1, t * 1.5) * 0.9;
-  }, { gain: 0.3, send: 0.4, panFn: (t) => Math.sin(t * 2.2) * 0.7 });
-  whoosh(a + 1.4, 0.4, { gain: 0.3, f0: 1500, f1: 6000 });
+  mix(a + CREATIVITY_MORPH[0], b - a - CREATIVITY_MORPH[0], (t) => {
+    const fc = 220 + 700 * (0.5 + 0.5 * Math.sin(t * 4 + Math.sin(t * 1.7) * 2));
+    return f(noise(), fc, 5).bp * Math.min(1, t * 1.2) * Math.min(1, (b - a - t) * 2);
+  }, { gain: 0.26, send: 0.45, panFn: (t) => Math.sin(t * 1.8) * 0.6 });
+  glide(a + 0.1, 1.3, 82, 164, { gain: 0.08 });
 }
-blips(S.content[0] + 0.2, 2.4, { gain: 0.03, rate: 14 });
-whoosh(S.content[0], 2.8, { gain: 0.18, f0: 300, f1: 1200, pan0: -0.3, pan1: 0.3 });
-riser(S.score[0], 1.0, { gain: 0.4 });
 
-// Verdict: each passing numeral on each drum is a tick; each landing is a heavy clunk.
+// Content: the sentence is read.
 {
-  const value = config.criteria.reduce((s, c) => s + (c.score * c.weight) / 100, 0).toFixed(2);
-  const digits = [...value].filter((c) => c !== '.').map(Number);
-  digits.forEach((d, idx) => {
-    const pan = (idx - 1) * 0.45;
-    let last = 0;
-    for (let t = SCORE_SPIN_START; t < SCORE_LANDS[idx] + 0.01; t += 1 / 960) {
-      const k = Math.floor(drumAngle(t, d, idx) / (TAU / 10));
-      if (k !== last) {
-        tick(S.score[0] + t, { gain: 0.05, pan, freq: 2600 + idx * 500 });
-        last = k;
-      }
-    }
-    impact(S.score[0] + SCORE_LANDS[idx], { size: 0.45, gain: 0.5, tone: 1.4 + idx * 0.15 });
-    click(S.score[0] + SCORE_LANDS[idx], { gain: 0.5, pan });
-  });
-  const total = S.score[0] + SCORE_LANDS[SCORE_LANDS.length - 1];
-  impact(total, { size: 1.2, gain: 0.6, tone: 0.9 });
+  const [h0, h1] = CONTENT_HIGHLIGHT;
+  typeTicks(at('content', h0), h1 - h0, 19, 0.04, { gain: 0.035, freq: 5200 });
+  ping(at('content', h1), { freq: 1975, gain: 0.05, decay: 0.7 });
 }
-riser(S.title[0], 1.2, { gain: 0.5 });
-riser(S.title[0], 0.35, { gain: 0.3, f0: 3000, f1: 14000 });
 
-// Title: a slow E-minor swell under the light sweep, then out.
-pad(S.title[0], S.title[1] - S.title[0] - 0.4, [82.41, 123.47, 164.81, 196.0, 246.94], { gain: 0.35, a: 1.4, r: 1.4, cut0: 250, cut1: 2400 });
-whoosh(S.title[0] + 1.6, 2.6, { gain: 0.2, f0: 1500, f1: 7000, pan0: -0.7, pan1: 0.7 });
-blips(S.title[0] + 2.5, 0.9, { gain: 0.03 });
+// Verdict: four slices, then the number.
+impact(at('score'), { size: 0.9, gain: 0.75, tone: 0.8 });
+config.criteria.forEach((c, i) => {
+  whoosh(at('score', SCORE.open[0] + i * 0.05), 0.4, { gain: 0.12, f0: 2500, f1: 9000, pan0: (i - 1.5) * 0.4, pan1: (i - 1.5) * 0.5 });
+  tick(at('score', 0.55 + i * 0.1), { gain: 0.07, freq: 3000 + i * 400, pan: (i - 1.5) * 0.4 });
+});
+impact(at('score', SCORE.close[1]), { size: 0.5, gain: 0.4, tone: 1.1 });
+whoosh(at('score', SCORE.sink[0]), 0.7, { gain: 0.16, f0: 900, f1: 250, pan0: 0, pan1: 0 });
+{
+  const value = finalScore().toFixed(2);
+  const digits = [...value].filter((ch) => ch !== '.');
+  digits.forEach((d, k) => {
+    const s0 = at('score', SCORE.roll + k * SCORE.rollStagger);
+    for (let j = 0; j < 8; j++) tick(s0 + 0.03 + Math.pow(j / 8, 2.2) * 0.45, { gain: 0.05, freq: 2600 + k * 500, pan: (k - 1) * 0.45 });
+    click(at('score', rollEnd(k) - 0.55), { gain: 0.35, pan: (k - 1) * 0.45 });
+  });
+  ping(at('score', SCORE.dot), { freq: 1568, gain: 0.08, decay: 0.9 });
+}
+
+// Title: into the screen; the name lands on the downbeat.
+riser(at('title', TITLE.fill), 1.3, { gain: 0.45 });
+riser(at('title', TITLE.fill), 0.35, { gain: 0.25, f0: 3000, f1: 14000 });
+whoosh(at('title', 0.1), TITLE.fill, { gain: 0.25, f0: 200, f1: 1800, pan0: 0, pan1: 0 });
+impact(at('title', TITLE.fill), { size: 2.2, gain: 1.05, tone: 0.75 });
+typeTicks(at('title', TITLE.fill), 1.2, 4, 0.1, { gain: 0.06, freq: 2200 });
+pad(at('title', TITLE.fill - 0.2), TITLE.out - TITLE.fill + 1.4, [82.41, 123.47, 164.81, 196.0, 246.94], { gain: 0.32, a: 0.9, r: 1.1, cut0: 250, cut1: 2200 });
 {
   let ph = 0;
-  mix(S.title[0], 5, (t) => {
+  mix(at('title', TITLE.fill), 4, (t) => {
     ph += (TAU * 41.2) / SR;
-    return Math.sin(ph) * Math.min(1, t / 0.05) * Math.exp(-t / 1.8);
-  }, { gain: 0.5, send: 0.05 });
+    return Math.sin(ph) * Math.min(1, t / 0.05) * Math.exp(-t / 1.6);
+  }, { gain: 0.45, send: 0.05 });
 }
+whoosh(at('title', TITLE.out), 0.6, { gain: 0.16, f0: 2000, f1: 500, pan0: 0.3, pan1: -0.3 });
+ping(at('title', TITLE.dotTravel[0]), { freq: 2637, gain: 0.08, decay: 0.9 });
+pulse(at('title', TITLE.dotGone[1] - 0.05), { gain: 0.35 });
 
 // ---------------------------------------------------------------- reverb + master
 

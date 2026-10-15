@@ -1,11 +1,11 @@
 import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
 import { config } from './config.js';
+import { range } from './lib/anim.js';
 import { Engine, createEnvironments } from './engine.js';
-import { loadFonts, hud } from './overlay.js';
-import { loadFont3D, cursorGeo, makeSiteAtlas } from './assets.js';
-import { createOpen } from './shots/open.js';
-import { createField } from './shots/field.js';
-import { createOne } from './shots/one.js';
+import { loadFonts, frameUI } from './overlay.js';
+import { cursorGeo, makeSiteAtlas, makeHeroSite, makeArticle } from './assets.js';
+import { createGlint } from './shots/glint.js';
+import { createFieldShots } from './shots/field.js';
 import { createCriterion } from './shots/criteria.js';
 import { createScore } from './shots/score.js';
 import { createTitle } from './shots/title.js';
@@ -27,13 +27,13 @@ async function boot() {
     env: createEnvironments(engine.renderer),
     cursorGeo: cursorGeo(),
     atlas: makeSiteAtlas(),
-    fontBlack: await loadFont3D('InterTight-Black.ttf'),
+    hero: makeHeroSite(),
+    article: makeArticle(),
   };
 
   const shots = [
-    createOpen(A),
-    createField(A),
-    createOne(A),
+    createGlint(A),
+    ...createFieldShots(A),
     ...config.criteria.map((c, i) => createCriterion(A, c, i)),
     createScore(A),
     createTitle(A),
@@ -51,10 +51,12 @@ async function boot() {
       frame,
       samples: params.has('fast') ? 1 : shot.samples?.(lt) ?? 1,
       drawScene: (tk) => shot.update(Math.max(0, tk - shot.start)),
-      drawOverlay: (ctx, ctxD) => {
-        shot.overlay?.(ctx, ctxD, lt, t, frame);
-        const h = shot.hud?.(lt) ?? { alpha: 1 };
-        hud(ctx, t, { ...h, frame });
+      drawOverlay: (ctx, ctxD, ctxM) => {
+        shot.overlay?.(ctx, ctxD, ctxM, lt, t, frame);
+        const f = shot.frame?.(lt) ?? {};
+        const prev = shots[shots.indexOf(shot) - 1]?.frame?.(0) ?? {};
+        const fresh = f.chapter !== prev.chapter || f.index !== prev.index;
+        frameUI(ctx, t, { chapterP: fresh ? range(lt, 0.05, 0.6) : 1, ...f });
       },
       post: shot.post?.(lt) ?? {},
     });
