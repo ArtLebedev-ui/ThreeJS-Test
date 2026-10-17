@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>JURY — verdict card preview</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #000;
+        color: #bbb;
+        font: 12px/1.4 ui-monospace, monospace;
+        overflow: hidden;
+      }
+      #c {
+        display: block;
+        width: 2560px;
+        height: 1600px;
+      }
+      body:not(.render) #c {
+        width: min(100vw, calc((100vh - 48px) * 1.6));
+        height: auto;
+        aspect-ratio: 16 / 10;
+        margin: 0 auto;
+      }
+      #ui {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 12px 16px;
+      }
+      #ui[hidden] {
+        display: none;
+      }
+      #ui input[type='number'] {
+        width: 56px;
+      }
+      #scrub {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c" width="2560" height="1600"></canvas>
+    <div id="ui" hidden>
+      <select id="comp">
+        <option value="total">Scores + Total</option>
+        <option value="scores">Scores</option>
+      </select>
+      <span id="inputs"></span>
+      <button id="play">Play</button>
+      <input id="scrub" type="range" min="0" value="0" />
+      <span id="label"></span>
+    </div>
+    <script>
+      if (location.search.includes('render')) document.body.classList.add('render');
+    </script>
+    <script type="module" src="/src/verdict/main.js"></script>
+  </body>
+</html>

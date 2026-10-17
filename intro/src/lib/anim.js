@@ -9,6 +9,7 @@ export const ease = {
   outQuad: (t) => 1 - (1 - t) * (1 - t),
   inCubic: (t) => t * t * t,
   outCubic: (t) => 1 - Math.pow(1 - t, 3),
+  inOutSine: (t) => -(Math.cos(Math.PI * t) - 1) / 2,
   inOutCubic: (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
   outQuart: (t) => 1 - Math.pow(1 - t, 4),
   inQuart: (t) => t * t * t * t,
