@@ -46,5 +46,22 @@ npm run sound      # soundtrack → out/sound.wav
 npm run encode     # out/frames + out/sound.wav → out/jury-intro-2560x1600.mp4
 ```
 
+## Rubric bumper «Оценочная ( N )»
+
+A 6-second 3D bumper between reviewed projects, with the episode number. `bumper.html` / `src/bumper/`:
+extruded type (Inter Medium for the Cyrillic word, Neue Montreal for the digits and brackets) with paper faces and
+black-chrome sides on a mirror-black floor. The camera glides along the word as the letters flip up, swings to the
+brackets while the digits spin on reels, pulls back to a three-quarter hero view as the number locks with a light
+streak and a ring across the floor, holds under a light sweep, then everything topples while the camera rushes into
+the number and cuts to black. Timings live in `src/bumper/timing.js`; the sound (`scripts/bumper-sound.mjs`) ticks
+on every digit the reels pass.
+
+```bash
+npm run bumper -- 42           # frames + sound → out/bumper-42.mp4
+FAST=1 npm run bumper -- 42    # half-res draft without motion blur
+```
+
+Preview with a scrubber: `npm run dev` → `/bumper.html?number=42`. Inter (OFL) is committed in `public/fonts/`.
+
 Rendering uses headless Chrome (`CHROME` env var overrides the path). Split a render across processes with
 `--worker 0/2` and `--worker 1/2`. `PRORES=1 npm run encode` also writes a ProRes 422 HQ master for editing.

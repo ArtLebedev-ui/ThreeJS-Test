@@ -9,7 +9,8 @@
     "render": "node scripts/render.mjs --out out/frames --resume",
     "preview": "node scripts/render.mjs --scale 0.5 --fast --out out/preview",
     "sound": "node scripts/sound.mjs out/sound.wav",
-    "encode": "bash scripts/encode.sh out/frames out/jury-intro-2560x1600.mp4"
+    "encode": "bash scripts/encode.sh out/frames out/jury-intro-2560x1600.mp4",
+    "bumper": "bash scripts/bumper.sh"
   },
   "dependencies": {
     "puppeteer-core": "^23.11.1",
