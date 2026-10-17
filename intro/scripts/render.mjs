@@ -4,6 +4,7 @@
 //   node scripts/render.mjs --worker 0/2                      render every 2nd frame starting at 0
 //   --fast  disables motion-blur sub-frames (preview quality)
 //   --scale 0.5  renders the 3D at half resolution (preview quality)
+//   --page verdict.html --query "comp=scores&scores=8.1,7.4,8.8,7.0"  renders the score card preview
 import fs from 'node:fs';
 import path from 'node:path';
 import { createServer } from 'vite';
@@ -49,8 +50,8 @@ const scale = Number(args.scale ?? 1);
 const vw = Math.round(2560 * scale);
 const vh = Math.round(1600 * scale);
 await page.setViewport({ width: vw, height: vh, deviceScaleFactor: 1 });
-const q = `?render&scale=${scale}${args.fast ? '&fast' : ''}`;
-await page.goto(`http://localhost:${port}/${q}`);
+const q = `?render&scale=${scale}${args.fast ? '&fast' : ''}${args.query ? `&${args.query}` : ''}`;
+await page.goto(`http://localhost:${port}/${args.page ?? ''}${q}`);
 await page.waitForFunction('window.__ready || window.__error', { timeout: 300000 });
 const err = await page.evaluate('window.__error');
 if (err) {
