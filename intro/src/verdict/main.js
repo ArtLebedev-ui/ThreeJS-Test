@@ -12,6 +12,8 @@ const blurSamples = params.has('fast') ? 1 : 10;
 const FONTS = {
   'NeueMontreal-Regular': ['NM Regular', 'Regular'],
   'NeueMontreal-Medium': ['NM Medium', 'Medium'],
+  // Metric-compatible stand-in for Arial, which carries the Cyrillic labels.
+  ArialMT: ['Liberation Sans', null],
 };
 
 const canvas = document.getElementById('c');
@@ -166,10 +168,12 @@ function renderTime(t) {
 
 async function loadFonts() {
   await Promise.all(
-    Object.values(FONTS).map(async ([family, file]) => {
-      const f = new FontFace(family, `url(/fonts/NeueMontreal-${file}.otf)`);
-      document.fonts.add(await f.load());
-    })
+    Object.values(FONTS)
+      .filter(([, file]) => file)
+      .map(async ([family, file]) => {
+        const f = new FontFace(family, `url(/fonts/NeueMontreal-${file}.otf)`);
+        document.fonts.add(await f.load());
+      }),
   );
 }
 
@@ -228,7 +232,7 @@ function setupUi(initial) {
     f.addEventListener('input', () => {
       setInputs(fields.map((x) => Number(x.value)));
       show();
-    })
+    }),
   );
   document.getElementById('comp').addEventListener('change', (e) => {
     select(e.target.value);

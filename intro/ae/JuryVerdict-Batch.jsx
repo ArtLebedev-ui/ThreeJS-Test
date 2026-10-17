@@ -1,10 +1,10 @@
 /*
-  Jury Verdict — batch.
+  Jury Verdict - batch.
   Duplicates the verdict template once per site, fills in the scores and (optionally) queues the renders.
 
   1. Run JuryVerdict.jsx once (or open a project that already has the template).
-  2. Select the template comp you want to use (either "Verdict — …" comp) in the Project panel or open it.
-  3. File > Scripts > Run Script File… > JuryVerdict-Batch.jsx
+  2. Select the template comp you want to use (either "Verdict - ..." comp) in the Project panel or open it.
+  3. File > Scripts > Run Script File... > JuryVerdict-Batch.jsx
   4. One site per line:  site-name.com  Design  UX  Creativity  Content
 */
 

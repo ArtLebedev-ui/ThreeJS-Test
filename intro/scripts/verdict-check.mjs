@@ -34,7 +34,7 @@ for (const modern of [true, false]) {
     for (const l of comp.layerList) {
       if (l.trackMatteType) {
         const m = matteOf(l);
-        if (!m || m.name !== `${l.name} · matte`) fail(`${comp.name}: "${l.name}" matte resolves to "${m?.name}"`);
+        if (!m || m.name !== `${l.name} / matte`) fail(`${comp.name}: "${l.name}" matte resolves to "${m?.name}"`);
       }
     }
 
@@ -58,12 +58,12 @@ for (const modern of [true, false]) {
     };
     const doc = (l) => l.property('ADBE Text Properties').property('ADBE Text Document');
     const pos = (l) => l.property('ADBE Transform Group').property('ADBE Position');
-    show('Design · score', doc, 3);
-    show('Design · score', pos, 3);
-    show('Total · integer', doc, 6);
-    show('Total · decimals', doc, 6);
-    show('Total · decimals', pos, 6);
-    show('UX · weight', doc, 1);
+    show('Design / score', doc, 3);
+    show('Design / score', pos, 3);
+    show('Total / integer', doc, 6);
+    show('Total / decimals', doc, 6);
+    show('Total / decimals', pos, 6);
+    show('UX / weight', doc, 1);
   }
 }
 
@@ -78,13 +78,13 @@ console.log('\n== batch');
   const last = (l, p) => evaluate(p(l), 6).text.split('\r').pop();
   const doc = (l) => l.property('ADBE Text Properties').property('ADBE Text Document');
   for (const c of made) {
-    const total = `${last(c.layer('Total · integer'), doc)}.${last(c.layer('Total · decimals'), doc)}`;
+    const total = `${last(c.layer('Total / integer'), doc)}.${last(c.layer('Total / decimals'), doc)}`;
     console.log(`  ${c.name}: site="${evaluate(doc(c.layer('Site')), 0).text}" total=${total}`);
   }
   const want = [['Verdict — lusion.co', '8.14'], ['Verdict — obys.agency', '8.60'], ['Verdict — site 3', '7.00']];
   want.forEach(([n, t], i) => {
     const c = made[i];
-    const got = c && `${last(c.layer('Total · integer'), doc)}.${last(c.layer('Total · decimals'), doc)}`;
+    const got = c && `${last(c.layer('Total / integer'), doc)}.${last(c.layer('Total / decimals'), doc)}`;
     if (!c || c.name !== n || got !== t) fail(`batch comp ${i}: ${c?.name} ${got}, want ${n} ${t}`);
   });
   if (env.queue.length !== 3) fail(`render queue has ${env.queue.length} items`);
