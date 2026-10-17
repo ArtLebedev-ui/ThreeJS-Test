@@ -8,6 +8,6 @@ export const BUMPER = {
   reels: { start: 1.35, land: 3.0, stagger: 0.16, turns: 1 },
   pullBack: [2.15, 3.25],
   sweep: [3.05, 4.55],
-  exit: { start: 4.6, stagger: 0.035, dur: 0.75 },
+  exit: { start: 4.6, stagger: 0.07, dur: 0.7 },
   fadeOut: [5.25, 5.7],
 };
