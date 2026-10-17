@@ -1,4 +1,4 @@
-// Minimal, strict model of the After Effects scripting DOM used by ae/JuryVerdict.jsx.
+// Minimal, strict model of the After Effects scripting DOM used by the ae/*.jsx templates.
 // Unknown match names throw, so a typo in the .jsx fails here instead of inside AE.
 // Expressions are evaluated with AE semantics (value of the last statement, `time`, `value`, `thisComp`).
 
@@ -29,12 +29,37 @@ const SPECS = {
     leaf('ADBE Vector Fill Opacity', 'Opacity', 100),
   ],
   'ADBE Slider Control': () => [leaf('ADBE Slider Control-0001', 'Slider', 0)],
+  'ADBE Text Selector': () => [
+    leaf('ADBE Text Percent Start', 'Start', 0),
+    leaf('ADBE Text Percent End', 'End', 100),
+    leaf('ADBE Text Percent Offset', 'Offset', 0),
+  ],
+  'ADBE Text Expressible Selector': () => [
+    leaf('ADBE Text Range Type2', 'Based On', 1),
+    leaf('ADBE Text Expressible Amount', 'Amount', 100),
+  ],
+  // The UI adds a Range Selector to every new animator; assume scripting may too.
+  'ADBE Text Animator': () => [
+    group('ADBE Text Selectors', 'Selectors', [
+      group('ADBE Text Selector', 'Range Selector 1', SPECS['ADBE Text Selector']()),
+    ]),
+    group('ADBE Text Animator Properties', 'Properties', []),
+  ],
+};
+
+const LEAVES = {
+  'ADBE Text Position 3D': ['Position', [0, 0, 0]],
+  'ADBE Text Opacity': ['Opacity', 100],
+  'ADBE Text Scale 3D': ['Scale', [100, 100, 100]],
 };
 
 const ADDABLE = {
   'ADBE Effect Parade': ['ADBE Slider Control'],
   'ADBE Root Vectors Group': ['ADBE Vector Group'],
   'ADBE Vectors Group': ['ADBE Vector Shape - Rect', 'ADBE Vector Shape - Ellipse', 'ADBE Vector Graphic - Fill'],
+  'ADBE Text Animators': ['ADBE Text Animator'],
+  'ADBE Text Selectors': ['ADBE Text Selector', 'ADBE Text Expressible Selector'],
+  'ADBE Text Animator Properties': Object.keys(LEAVES),
 };
 
 const DISPLAY = {
@@ -43,6 +68,9 @@ const DISPLAY = {
   'ADBE Vector Shape - Rect': 'Rectangle Path 1',
   'ADBE Vector Shape - Ellipse': 'Ellipse Path 1',
   'ADBE Vector Graphic - Fill': 'Fill 1',
+  'ADBE Text Animator': 'Animator 1',
+  'ADBE Text Selector': 'Range Selector 1',
+  'ADBE Text Expressible Selector': 'Expression Selector 1',
 };
 
 class Property {
@@ -61,7 +89,8 @@ class Property {
   property(key) {
     if (!this.children) throw new Error(`"${this.matchName}" has no sub-properties`);
     if (typeof key === 'number') {
-      if (key < 1 || key > this.children.length) throw new Error(`"${this.matchName}".property(${key}) is out of range`);
+      if (key < 1 || key > this.children.length)
+        throw new Error(`"${this.matchName}".property(${key}) is out of range`);
       return this.children[key - 1];
     }
     return this.children.find((c) => c.matchName === key || c.name === key) ?? null;
@@ -70,7 +99,9 @@ class Property {
     const allowed = ADDABLE[this.matchName];
     if (!allowed || !allowed.includes(matchName)) throw new Error(`cannot add "${matchName}" to "${this.matchName}"`);
     let p;
-    if (matchName === 'ADBE Vector Group') {
+    if (LEAVES[matchName]) {
+      p = leaf(matchName, ...LEAVES[matchName]);
+    } else if (matchName === 'ADBE Vector Group') {
       p = group('ADBE Vector Group', DISPLAY[matchName], [
         leaf('ADBE Vector Blend Mode', 'Blend Mode', 1),
         group('ADBE Vectors Group', 'Contents', []),
@@ -83,9 +114,14 @@ class Property {
     this.children.push(p);
     return p;
   }
+  remove() {
+    const siblings = this.parentProperty?.children;
+    if (!siblings) throw new Error(`cannot remove "${this.matchName}"`);
+    siblings.splice(siblings.indexOf(this), 1);
+  }
   setValue(v) {
     if (this.children) throw new Error(`setValue on group "${this.matchName}"`);
-    if (Array.isArray(this.value) && (!Array.isArray(v) || v.length < Math.min(2, this.value.length)))
+    if (Array.isArray(this.value) && (!Array.isArray(v) || v.length !== this.value.length))
       throw new Error(`"${this.matchName}" expects an array, got ${JSON.stringify(v)}`);
     this.value = clone(v);
   }
@@ -111,6 +147,9 @@ export class TextDocument {
     this.applyFill = true;
     this.fillColor = [1, 1, 1];
     this.applyStroke = false;
+    this.strokeColor = [0, 0, 0];
+    this.strokeWidth = 1;
+    this.strokeOverFill = true;
     this.tracking = 0;
     this.justification = 7413;
     this.autoLeading = true;
@@ -138,7 +177,13 @@ class Layer {
     this.groups = [group('ADBE Transform Group', 'Transform', SPECS['ADBE Transform Group']())];
     this.groups.push(group('ADBE Effect Parade', 'Effects', []));
     this.property('ADBE Transform Group').property('ADBE Position').value = [comp.width / 2, comp.height / 2];
-    if (kind === 'text') this.groups.push(group('ADBE Text Properties', 'Text', [leaf('ADBE Text Document', 'Source Text', null)]));
+    if (kind === 'text')
+      this.groups.push(
+        group('ADBE Text Properties', 'Text', [
+          leaf('ADBE Text Document', 'Source Text', null),
+          group('ADBE Text Animators', 'Animators', []),
+        ]),
+      );
     if (kind === 'shape') this.groups.push(group('ADBE Root Vectors Group', 'Contents', []));
   }
   property(key) {
@@ -212,7 +257,11 @@ class CompItem {
   }
   duplicate() {
     const copy = new CompItem(this.name, this.width, this.height, this.pixelAspect, this.duration, this.frameRate);
-    Object.assign(copy, { bgColor: this.bgColor.slice(), motionBlur: this.motionBlur, parentFolder: this.parentFolder });
+    Object.assign(copy, {
+      bgColor: this.bgColor.slice(),
+      motionBlur: this.motionBlur,
+      parentFolder: this.parentFolder,
+    });
     copy.layerList = this.layerList.map((l) => cloneLayer(l, copy));
     copy.layerList.forEach((l, i) => {
       const src = this.layerList[i].trackMatteLayer;
@@ -282,7 +331,12 @@ function mockWindow(dialog) {
       this.controls = [];
     }
     add(type, bounds, text) {
-      const ctl = { type, text: type === 'edittext' && dialog?.text != null ? dialog.text : text, value: false, add: (...a) => this.add(...a) };
+      const ctl = {
+        type,
+        text: type === 'edittext' && dialog?.text != null ? dialog.text : text,
+        value: false,
+        add: (...a) => this.add(...a),
+      };
       this.controls.push(ctl);
       return ctl;
     }
@@ -295,7 +349,7 @@ function mockWindow(dialog) {
 export function runScript(env, source) {
   const fn = new Function('app', 'ParagraphJustification', 'TrackMatteType', 'alert', 'CompItem', 'Window', source);
   fn(env.app, ParagraphJustification, TrackMatteType, env.alert, CompItem, env.Window);
-  const failed = env.log.find((m) => /^Jury Verdict( batch)?: (?!done|created)/.test(m));
+  const failed = env.log.find((m) => /^Jury \w+( batch)?: (?!done|created)/.test(m));
   if (failed) throw new Error(failed);
   return env;
 }
@@ -312,12 +366,17 @@ export function matteOf(layer) {
   return layer.comp.layerList[layer.comp.layerList.indexOf(layer) - 1] ?? null;
 }
 
-function expressionApi(comp) {
+function expressionApi(comp, time) {
   return {
     layer(name) {
       const l = comp.layer(name);
       if (!l) throw new Error(`thisComp.layer("${name}") does not exist`);
       return {
+        get text() {
+          if (l.kind !== 'text') throw new Error(`"${name}" is not a text layer`);
+          const doc = l.property('ADBE Text Properties').property('ADBE Text Document');
+          return { sourceText: { toString: () => String(evaluate(doc, time).text) } };
+        },
         effect(fxName) {
           const fx = l.property('ADBE Effect Parade').property(fxName);
           if (!fx) throw new Error(`effect("${fxName}") does not exist on "${name}"`);
@@ -328,21 +387,24 @@ function expressionApi(comp) {
   };
 }
 
-function runExpression(code, time, value, thisComp) {
+// eslint-disable-next-line no-unused-vars
+function runExpression(code, time, value, thisComp, textIndex, textTotal) {
   // eslint-disable-next-line no-eval
   return eval(code);
 }
 
 // Value of a property at `time`, with its expression applied.
-export function evaluate(prop, time) {
+// `chars` = { textIndex, textTotal } for expression selectors.
+export function evaluate(prop, time, chars = {}) {
   if (!prop.expression) return prop.value;
   const comp = owningComp(prop);
   const v = prop.value instanceof TextDocument ? prop.value.text : prop.value;
-  const out = runExpression(prop.expression, time, v, expressionApi(comp));
+  const out = runExpression(prop.expression, time, v, expressionApi(comp, time), chars.textIndex, chars.textTotal);
   if (prop.value instanceof TextDocument) return Object.assign(prop.value.copy(), { text: String(out) });
   if (Array.isArray(prop.value) && (!Array.isArray(out) || out.some((x) => !Number.isFinite(x))))
     throw new Error(`expression on "${prop.matchName}" returned ${JSON.stringify(out)}`);
-  if (!Array.isArray(prop.value) && !Number.isFinite(out)) throw new Error(`expression on "${prop.matchName}" returned ${out}`);
+  if (!Array.isArray(prop.value) && !Number.isFinite(out))
+    throw new Error(`expression on "${prop.matchName}" returned ${out}`);
   return out;
 }
 

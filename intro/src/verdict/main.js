@@ -1,19 +1,25 @@
-// Preview of the After Effects template: runs ae/JuryVerdict.jsx against the AE mock
-// and draws the resulting comp with its expressions, track mattes and motion blur.
+// Preview of the After Effects templates: runs ae/*.jsx against the AE mock and draws the
+// resulting comp with its expressions, text animators, track mattes and motion blur.
 //   verdict.html?comp=total|scores&scores=7.2,7.2,7.0,6.7&site=site-name.com
-import source from '../../ae/JuryVerdict.jsx?raw';
+//   verdict.html?jsx=transition&number=42&title=...
+import verdictSource from '../../ae/JuryVerdict.jsx?raw';
+import transitionSource from '../../ae/JuryTransition.jsx?raw';
 import { runJsx, indexComp, evaluate, matteOf, ParagraphJustification } from './ae-mock.js';
 
 const params = new URLSearchParams(location.search);
 const isRender = params.has('render');
 const scale = Number(params.get('scale') ?? 1);
 const blurSamples = params.has('fast') ? 1 : 10;
+const which = params.get('jsx') === 'transition' ? 'transition' : 'verdict';
+const source = which === 'transition' ? transitionSource : verdictSource;
 
+// PostScript name -> [CSS family, Neue Montreal file to load (null = system font), weight]
 const FONTS = {
-  'NeueMontreal-Regular': ['NM Regular', 'Regular'],
-  'NeueMontreal-Medium': ['NM Medium', 'Medium'],
-  // Metric-compatible stand-in for Arial, which carries the Cyrillic labels.
-  ArialMT: ['Liberation Sans', null],
+  'NeueMontreal-Light': ['NM Light', 'Light', 400],
+  'NeueMontreal-Regular': ['NM Regular', 'Regular', 400],
+  'NeueMontreal-Medium': ['NM Medium', 'Medium', 400],
+  'Inter-Regular': ['Inter', null, 400],
+  'Inter-Medium': ['Inter', null, 500],
 };
 
 const canvas = document.getElementById('c');
@@ -33,16 +39,24 @@ function build() {
 }
 
 function select(kind) {
-  comp = comps.find((c) => (kind === 'scores' ? !/Total/.test(c.name) : /Total/.test(c.name)));
+  if (which === 'transition') comp = comps[0];
+  else comp = comps.find((c) => (kind === 'scores' ? !/Total/.test(c.name) : /Total/.test(c.name)));
 }
 
-function setInputs(scores, site) {
+function setText(c, layerName, text) {
+  const l = c.layer(layerName);
+  if (text && l) l.property('ADBE Text Properties').property('ADBE Text Document').value.text = text;
+}
+
+function setInputs({ scores = [], site, number, title }) {
   for (const c of comps) {
     const fx = c.layer('CONTROLS').property('ADBE Effect Parade');
     ['Design', 'UX', 'Creativity', 'Content'].forEach((n, i) => {
-      if (scores[i] != null && Number.isFinite(scores[i])) fx.property(n).property(1).value = scores[i];
+      if (fx.property(n) && Number.isFinite(scores[i])) fx.property(n).property(1).value = scores[i];
     });
-    if (site) c.layer('Site').property('ADBE Text Properties').property('ADBE Text Document').value.text = site;
+    if (fx.property('Number') && Number.isFinite(number)) fx.property('Number').property(1).value = number;
+    setText(c, 'Site', site);
+    setText(c, 'Title', title);
   }
 }
 
@@ -104,23 +118,87 @@ function drawLayer(g, l) {
       g.fill();
     }
   } else if (l.kind === 'text') {
-    const doc = evaluate(l.property('ADBE Text Properties').property('ADBE Text Document'), tNow);
-    const family = FONTS[doc.font]?.[0] ?? 'sans-serif';
-    g.font = `${doc.fontSize}px "${family}"`;
-    g.textBaseline = 'alphabetic';
-    g.textAlign =
-      doc.justification === ParagraphJustification.RIGHT_JUSTIFY
-        ? 'right'
-        : doc.justification === ParagraphJustification.CENTER_JUSTIFY
-          ? 'center'
-          : 'left';
-    g.fillStyle = rgb(doc.fillColor);
-    const lead = doc.autoLeading ? doc.fontSize * 1.2 : doc.leading;
-    String(doc.text)
-      .split(/\r\n|\r|\n/)
-      .forEach((line, i) => g.fillText(line, 0, i * lead));
+    drawText(g, l, opacity);
   }
   g.restore();
+}
+
+// Per-character state from text animators: position offset and opacity factor.
+function charAnimators(l, total) {
+  const group = l.property('ADBE Text Properties').property('ADBE Text Animators');
+  const anims = [];
+  for (let a = 1; a <= group.numProperties; a++) {
+    const anim = group.property(a);
+    const props = anim.property('ADBE Text Animator Properties');
+    const pos = props.property('ADBE Text Position 3D');
+    const op = props.property('ADBE Text Opacity');
+    const sels = anim.property('ADBE Text Selectors');
+    anims.push({
+      pos: pos && evaluate(pos, tNow),
+      op: op && evaluate(op, tNow),
+      amount(i) {
+        let k = 1;
+        for (let s = 1; s <= sels.numProperties; s++) {
+          const sel = sels.property(s);
+          if (sel.matchName === 'ADBE Text Expressible Selector') {
+            const v = evaluate(sel.property('ADBE Text Expressible Amount'), tNow, { textIndex: i, textTotal: total });
+            k *= Math.min(100, Math.max(0, Array.isArray(v) ? v[0] : v)) / 100;
+          }
+        }
+        return k;
+      },
+    });
+  }
+  return anims;
+}
+
+function drawText(g, l, layerOpacity) {
+  const doc = evaluate(l.property('ADBE Text Properties').property('ADBE Text Document'), tNow);
+  const [family, , weight] = FONTS[doc.font] ?? ['sans-serif', null, 400];
+  g.font = `${weight} ${doc.fontSize}px "${family}"`;
+  g.textBaseline = 'alphabetic';
+  g.textAlign = 'left';
+  g.fillStyle = rgb(doc.fillColor);
+  g.strokeStyle = rgb(doc.strokeColor ?? [0, 0, 0]);
+  g.lineWidth = doc.strokeWidth ?? 1;
+  g.lineJoin = 'round';
+  const track = ((doc.tracking ?? 0) * doc.fontSize) / 1000;
+  const lead = doc.autoLeading ? doc.fontSize * 1.2 : doc.leading;
+  const paint = (str, x, y) => {
+    if (doc.applyFill) g.fillText(str, x, y);
+    if (doc.applyStroke) g.strokeText(str, x, y);
+  };
+  String(doc.text)
+    .split(/\r\n|\r|\n/)
+    .forEach((line, li) => {
+      const chars = [...line];
+      const advance = (n) => g.measureText(chars.slice(0, n).join('')).width + n * track;
+      const width = advance(chars.length);
+      const x0 =
+        doc.justification === ParagraphJustification.RIGHT_JUSTIFY
+          ? -width
+          : doc.justification === ParagraphJustification.CENTER_JUSTIFY
+            ? -width / 2
+            : 0;
+      const anims = charAnimators(l, chars.length);
+      if (!anims.length && !track) return paint(line, x0, li * lead);
+      chars.forEach((ch, i) => {
+        let dx = 0;
+        let dy = 0;
+        let op = 1;
+        for (const a of anims) {
+          const k = a.amount(i + 1);
+          if (a.pos) {
+            dx += a.pos[0] * k;
+            dy += a.pos[1] * k;
+          }
+          if (a.op != null) op *= 1 + (a.op / 100 - 1) * k;
+        }
+        if (op <= 0) return;
+        g.globalAlpha = layerOpacity * op;
+        paint(ch, x0 + advance(i) + dx, li * lead + dy);
+      });
+    });
 }
 
 // Rectangular shape mattes become clip paths; that is all the template uses.
@@ -168,12 +246,11 @@ function renderTime(t) {
 
 async function loadFonts() {
   await Promise.all(
-    Object.values(FONTS)
-      .filter(([, file]) => file)
-      .map(async ([family, file]) => {
-        const f = new FontFace(family, `url(/fonts/NeueMontreal-${file}.otf)`);
-        document.fonts.add(await f.load());
-      }),
+    Object.values(FONTS).map(async ([family, file, weight]) => {
+      if (!file) return document.fonts.load(`${weight} 40px "${family}"`, 'Оценочная');
+      const f = new FontFace(family, `url(/fonts/NeueMontreal-${file}.otf)`);
+      document.fonts.add(await f.load());
+    }),
   );
 }
 
@@ -185,7 +262,12 @@ async function init() {
   await loadFonts();
   build();
   const scores = (params.get('scores') ?? '').split(',').filter(Boolean).map(Number);
-  setInputs(scores, params.get('site'));
+  setInputs({
+    scores,
+    site: params.get('site'),
+    number: params.has('number') ? Number(params.get('number')) : undefined,
+    title: params.get('title'),
+  });
   select(params.get('comp') ?? 'total');
 
   window.__intro = {
@@ -208,7 +290,7 @@ function setupUi(initial) {
   const inputs = document.getElementById('inputs');
   const names = ['Design', 'UX', 'Creativity', 'Content'];
   const defaults = [7.2, 7.2, 7.0, 6.7];
-  const fields = names.map((n, i) => {
+  const fields = (which === 'verdict' ? names : []).map((n, i) => {
     const el = document.createElement('input');
     el.type = 'number';
     el.step = '0.1';
@@ -230,10 +312,11 @@ function setupUi(initial) {
   };
   fields.forEach((f) =>
     f.addEventListener('input', () => {
-      setInputs(fields.map((x) => Number(x.value)));
+      setInputs({ scores: fields.map((x) => Number(x.value)) });
       show();
     }),
   );
+  document.getElementById('comp').hidden = which !== 'verdict';
   document.getElementById('comp').addEventListener('change', (e) => {
     select(e.target.value);
     frame = Math.min(frame, totalFrames() - 1);

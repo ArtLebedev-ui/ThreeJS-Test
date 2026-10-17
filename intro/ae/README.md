@@ -1,4 +1,4 @@
-# Jury Verdict — шаблон оценки для After Effects
+# Jury — шаблоны для After Effects: оценка и переход
 
 Карточка «Оценочная» после каждого сайта: четыре критерия заполняют колонки до своей оценки,
 цифры прокатываются вместе с уровнем, затем уровни сходятся в одну линию — средневзвешенный балл, —
@@ -7,9 +7,10 @@
 
 ## Установка
 
-1. Установить шрифт Neue Montreal в систему (нужны `NeueMontreal-Regular` и `NeueMontreal-Medium`).
-   В Neue Montreal нет кириллицы, поэтому «Итоговая оценка» набрана шрифтом `FONT_CYRILLIC`
-   (по умолчанию Arial). Чтобы поставить свой, поменяй PostScript-имя в начале `JuryVerdict.jsx`.
+1. Установить шрифты: Neue Montreal (`NeueMontreal-Light`, `-Regular`, `-Medium`) и Inter
+   (бесплатный, [rsms.me/inter](https://rsms.me/inter/), нужны `Inter-Regular` и `Inter-Medium`).
+   В Neue Montreal нет кириллицы, поэтому русские надписи набраны шрифтом `FONT_CYRILLIC` (Inter).
+   Чтобы поставить свой, поменяй PostScript-имя в начале `.jsx`.
 2. After Effects 2020 или новее: `File → Scripts → Run Script File…` → `JuryVerdict.jsx`.
 3. В проекте появится папка **Jury Verdict** с двумя композициями 2560×1600, 30 fps:
    - **Verdict - Scores** (6.5 с) — только четыре оценки;
@@ -34,9 +35,19 @@ obys.agency   8.9 8.1 9.3 7.5
 
 Скрипт продублирует шаблон под каждый сайт, подставит оценки и (по галочке) добавит всё в Render Queue.
 
+## Переход между проектами
+
+`Run Script File…` → `JuryTransition.jsx` — композиция **Transition - Project** (2560×1600, 30 fps, 6 с):
+слово «Оценочная» собирается по буквам на весь кадр и уходит вверх, с краёв влетают огромные скобки,
+между ними прокатывается номер проекта — «( 42 )», за ними бегут контурные строки; в конце скобки
+разгоняются навстречу, пересекаются, срезают номер — и всё уходит в чёрное.
+
+В Essential Graphics два поля: **Number** (номер проекта, однозначные пишутся как `07`) и **Title** (слово).
+
 ## Превью без After Effects
 
-`node scripts/verdict-check.mjs` прогоняет оба скрипта на строгой модели API After Effects
+`node scripts/verdict-check.mjs` прогоняет все скрипты на строгой модели API After Effects
 и вычисляет каждое выражение на всём таймлайне.
 `npm run dev` → `/verdict.html` — интерактивное превью шаблона с полями для оценок.
-Рендер в файл: `node scripts/render.mjs --page verdict.html --query "comp=total&scores=8.4,7.6,9.1,6.8&site=lusion.co" --out out/verdict-total`.
+Рендер в файл: `node scripts/render.mjs --page verdict.html --query "comp=total&scores=8.4,7.6,9.1,6.8&site=lusion.co" --out out/verdict-total`,
+переход — `--query "jsx=transition&number=42"`.

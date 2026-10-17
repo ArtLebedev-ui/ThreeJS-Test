@@ -9,7 +9,7 @@
   Edit the numbers in Essential Graphics (or on the CONTROLS layer).
   Everything else is driven by expressions, so nothing has to be re-keyed.
   Requires Neue Montreal (NeueMontreal-Regular / -Medium) installed in the system.
-  Neue Montreal has no Cyrillic, so Russian labels use FONT_CYRILLIC (swap it for any installed font).
+  Neue Montreal has no Cyrillic, so Russian labels use FONT_CYRILLIC (Inter; swap it for any installed font).
 */
 
 (function () {
@@ -22,7 +22,8 @@
 
     var FONT_REGULAR = "NeueMontreal-Regular";
     var FONT_MEDIUM = "NeueMontreal-Medium";
-    var FONT_CYRILLIC = "ArialMT";
+    var FONT_CYRILLIC = "Inter-Medium";          // Neue Montreal has no Cyrillic; Inter is free (rsms.me/inter)
+    var FONT_CYRILLIC_REGULAR = "Inter-Regular";
 
     var TOTAL_LABEL = "\u0418\u0442\u043E\u0433\u043E\u0432\u0430\u044F \u043E\u0446\u0435\u043D\u043A\u0430";
     var TOTAL_SUBLABEL = "\u0421\u0440\u0435\u0434\u043D\u0435\u0432\u0437\u0432\u0435\u0448\u0435\u043D\u043D\u044B\u0439 \u0431\u0430\u043B\u043B";
@@ -376,7 +377,7 @@
                 ParagraphJustification.LEFT_JUSTIFY, [G.M + G.PADX, G.HEAD_Y]);
             maskedLine(comp, pre, fl, G.M, G.DOTX, 46, String(G.HEAD_Y), 'eio(T.lbl0, 1.1)', '0', bandTop);
 
-            var fs = addText(comp, "Total / sublabel", TOTAL_SUBLABEL, FONT_CYRILLIC, 30, INK,
+            var fs = addText(comp, "Total / sublabel", TOTAL_SUBLABEL, FONT_CYRILLIC_REGULAR, 30, INK,
                 ParagraphJustification.LEFT_JUSTIFY, [G.M + G.PADX, G.HEAD_Y + 52]);
             tr(fs).property("ADBE Opacity").setValue(55);
             maskedLine(comp, pre, fs, G.M, G.DOTX, 30, String(G.HEAD_Y + 52), 'eio(T.lbl0 + 0.1, 1.1)', '0', bandTop);
